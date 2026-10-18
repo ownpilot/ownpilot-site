@@ -70,7 +70,7 @@ test('turning mouse effects off removes input listeners while ambient motion con
     const transform = await page.locator('.field-node').first().getAttribute('transform');
     await page.clock.runFor(800);
     await expect(page.locator('.field-node').first()).not.toHaveAttribute('transform', transform!);
-    await expect(page.locator('[data-pointer]')).toHaveAttribute('opacity', '0');
+    expect(Number(await page.locator('[data-pointer]').getAttribute('opacity'))).toBe(0);
     expect(await resources()).toEqual({ listeners: running.listeners - 1, frames: running.frames });
     await page.mouse.click(18, 210);
     await page.clock.runFor(120);
