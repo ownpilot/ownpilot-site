@@ -386,7 +386,7 @@ export function createSiteScene(
               ? 'running'
               : 'ambient';
     svg.dataset.state = state;
-    svg.dataset.interaction = interaction ? 'on' : 'off';
+    svg.dataset.mouseEffects = interaction ? 'on' : 'off';
     if (state === 'running' || state === 'ambient') frame = requestAnimationFrame(tick);
     else {
       pulses.length = 0;
