@@ -47,16 +47,16 @@ test('one SVG spans sections and routes, preserves controls, and keeps its off p
   await page.locator('.studio-card').scrollIntoViewIfNeeded();
   await expect(field).toHaveAttribute('data-state', 'running');
   expect((await field.boundingBox())?.y).toBe(0);
-  await page.getByRole('button', { name: 'Animasyonları kapat', exact: true }).click();
-  await expect(field).toHaveAttribute('data-state', 'off');
-  await expect(page.locator('.field-node')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true }).click();
+  await expect(field).toHaveAttribute('data-state', 'ambient');
+  expect(await page.locator('.field-node').count()).toBeGreaterThan(0);
   await page.getByRole('link', { name: 'Integrations', exact: true }).first().click();
   await expect(page).toHaveURL(/\/integrations\/$/);
   await expect(field).toHaveCount(1);
-  await expect(field).toHaveAttribute('data-state', 'off');
-  await expect(page.locator('.field-node')).toHaveCount(0);
+  await expect(field).toHaveAttribute('data-state', 'ambient');
+  expect(await page.locator('.field-node').count()).toBeGreaterThan(0);
   await expect(page.locator('[data-interaction]')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Animasyonları aç', exact: true }).click();
+  await page.getByRole('button', { name: 'Fare efektlerini aç', exact: true }).click();
   await expect(field).toHaveAttribute('data-state', 'running');
 });
 
@@ -239,9 +239,12 @@ test('reduced motion remains still while themes and page content remain usable',
   await page.goto('/');
   const field = page.locator('.site-field');
   await expect(field).toHaveAttribute('data-state', 'reduced');
-  await expect(page.getByRole('button', { name: 'Animasyonları aç', exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'Fare efektlerini aç', exact: true }),
+  ).toBeEnabled();
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.locator('.field-node')).toHaveCount(0);
+  expect(await page.locator('.field-node').count()).toBeGreaterThan(0);
+  const transform = await page.locator('.field-node').first().getAttribute('transform');
   const color = await page.locator('.site-background').evaluate((el) => getComputedStyle(el).color);
   await page.mouse.click(18, 210);
   await expect(page.locator('.field-pulse[data-active="true"]')).toHaveCount(0);
@@ -250,7 +253,7 @@ test('reduced motion remains still while themes and page content remain usable',
   await expect
     .poll(() => page.locator('.site-background').evaluate((el) => getComputedStyle(el).color))
     .not.toBe(color);
-  await expect(page.locator('.field-node')).toHaveCount(0);
+  await expect(page.locator('.field-node').first()).toHaveAttribute('transform', transform!);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(field).toHaveAttribute('data-state', 'running');
 });
@@ -277,9 +280,9 @@ test('mobile taps are bounded and a real touch swipe still scrolls the page', as
     .toBeGreaterThan(0);
   expect(await page.locator('.field-pulse[data-active="true"]').count()).toBeLessThanOrEqual(3);
   expect(await page.locator('.field-relay[data-active="true"]').count()).toBeLessThanOrEqual(9);
-  await page.getByRole('button', { name: 'Animasyonları kapat', exact: true }).tap();
-  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'off');
-  await page.getByRole('button', { name: 'Animasyonları aç', exact: true }).tap();
+  await page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true }).tap();
+  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'ambient');
+  await page.getByRole('button', { name: 'Fare efektlerini aç', exact: true }).tap();
   await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'running');
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', {
@@ -307,7 +310,7 @@ test('without JavaScript the SVG stays decorative and navigation remains usable'
   await page.goto('/');
   await expect(page.locator('.site-field')).toHaveCount(1);
   await expect(page.locator('.site-background')).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.getByRole('button', { name: 'Animasyonları kapat' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Fare efektlerini kapat' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Make it yours', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/getting-started\/$/);
   await expect(page.locator('h1')).toBeVisible();

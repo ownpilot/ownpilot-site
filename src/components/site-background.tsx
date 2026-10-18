@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MousePointer2 } from 'lucide-react';
-import { createSiteScene } from '@/lib/site-scene';
+import { createSiteScene, type SiteScene } from '@/lib/site-scene';
 
 const STORAGE_KEY = 'ownpilot-background-motion';
 const readChoice = (value: string | null) =>
@@ -13,12 +13,13 @@ const readChoice = (value: string | null) =>
 export function SiteBackground() {
   const id = useId().replaceAll(':', '');
   const surface = useRef<SVGSVGElement>(null);
+  const scene = useRef<SiteScene | null>(null);
   const choice = useRef<boolean | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [ready, setReady] = useState(false);
   const [controlHost, setControlHost] = useState<HTMLElement | null>(null);
-  const label = enabled ? 'Animasyonları kapat' : 'Animasyonları aç';
+  const label = enabled ? 'Fare efektlerini kapat' : 'Fare efektlerini aç';
 
   useEffect(() => {
     const media = matchMedia('(prefers-reduced-motion: reduce)');
@@ -54,13 +55,16 @@ export function SiteBackground() {
     };
   }, []);
   useEffect(() => {
-    if (!ready || !enabled || !surface.current) return;
-    const scene = createSiteScene(surface.current);
-    return () => scene.destroy();
-  }, [enabled, ready]);
+    if (!ready || !surface.current) return;
+    // Keep ambient geometry alive across mouse preference changes.
+    scene.current = createSiteScene(surface.current, { ambient: !reduced, interaction: enabled });
+    return () => {
+      scene.current?.destroy();
+      scene.current = null;
+    };
+  }, [ready]);
   useEffect(() => {
-    if (ready && !enabled && surface.current)
-      surface.current.dataset.state = reduced && choice.current === null ? 'reduced' : 'off';
+    scene.current?.setMotion({ ambient: !reduced, interaction: enabled });
   }, [enabled, ready, reduced]);
 
   function toggle() {
@@ -76,7 +80,7 @@ export function SiteBackground() {
 
   return (
     <>
-      <div className="site-background" aria-hidden="true" data-enabled={ready && enabled}>
+      <div className="site-background" aria-hidden="true" data-enabled={ready}>
         <svg
           ref={surface}
           className="site-field"

@@ -14,7 +14,8 @@ import {
   type FieldRelay,
 } from './ambient-field';
 
-export type SiteScene = { destroy: () => void };
+type SceneMotion = { ambient: boolean; interaction: boolean };
+export type SiteScene = { setMotion: (motion: SceneMotion) => void; destroy: () => void };
 const NS = 'http://www.w3.org/2000/svg';
 const colors = ['field-blue', 'field-green', 'field-teal'];
 const interactive =
@@ -36,7 +37,10 @@ function set(node: Element, name: string, value: number) {
   write(node, name, value.toFixed(2));
 }
 
-export function createSiteScene(svg: SVGSVGElement): SiteScene {
+export function createSiteScene(
+  svg: SVGSVGElement,
+  initial: SceneMotion = { ambient: true, interaction: true },
+): SiteScene {
   const layer = svg.parentElement!;
   const group = (name: string) => svg.querySelector<SVGGElement>(`[data-${name}]`)!;
   const nodeLayer = group('nodes'),
@@ -56,6 +60,9 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     entrance = 0;
   let visible = true,
     destroyed = false;
+  let ambient = initial.ambient,
+    interaction = initial.interaction;
+  let listening = false;
   let sceneScroll = scrollY,
     energy = 0.55,
     lastInteraction = -100,
@@ -144,7 +151,7 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
       echoLayer.append(ray, echo);
       return { model, originY: model.homeY, view, echo, ray };
     });
-    sceneScroll = scrollY;
+    sceneScroll = ambient ? scrollY : 0;
     // Keep initial node positions aligned with the visitor's current scroll.
     for (const node of nodes) {
       node.model.homeY = wrap(node.originY - sceneScroll * node.model.depth * C.parallax);
@@ -163,7 +170,7 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     relays.length = 0;
     pointer.strength = 0;
     pointerInside = false;
-    if (!frame) paint(0);
+    if (!frame) paint(0, !ambient && !interaction);
   }
   const wrap = (y: number) =>
     ((((y + 60) % (height + 120)) + (height + 120)) % (height + 120)) - 60;
@@ -334,7 +341,7 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     write(
       routeLayer,
       'transform',
-      `translate(0 ${(Math.sin(sceneScroll * 0.00035) * height * 0.05).toFixed(1)})`,
+      `translate(0 ${(Math.sin(sceneScroll * 0.00035 + motionTime * 0.07) * height * 0.025).toFixed(1)})`,
     );
   }
   function tick(now: number) {
@@ -351,11 +358,12 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     energy += ((active ? 1 : 0.55) - energy) * (1 - Math.exp(-dt * 2));
     // Effects expire in real seconds; only ambient drift becomes quieter when idle.
     time += dt;
-    motionTime += dt * energy;
+    if (ambient) motionTime += dt * energy;
     entrance += dt;
     pointer.strength +=
       ((pointerInside && active ? 1 : 0) - pointer.strength) * (1 - Math.exp(-dt * 6));
-    sceneScroll += (scrollY - sceneScroll) * (1 - Math.exp(-dt * 7));
+    if (ambient) sceneScroll += (scrollY - sceneScroll) * (1 - Math.exp(-dt * 7));
+    else sceneScroll = 0;
     pruneFieldEffects(pulses, time, C.pulseLife);
     pruneFieldEffects(trails, time, C.trailLife);
     pruneFieldRelays(relays, time);
@@ -367,9 +375,19 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     cancelAnimationFrame(frame);
     frame = 0;
     previous = 0;
-    const state = document.hidden ? 'hidden' : !visible ? 'offscreen' : 'running';
+    const state =
+      !ambient && !interaction
+        ? 'reduced'
+        : document.hidden
+          ? 'hidden'
+          : !visible
+            ? 'offscreen'
+            : interaction
+              ? 'running'
+              : 'ambient';
     svg.dataset.state = state;
-    if (state === 'running') frame = requestAnimationFrame(tick);
+    svg.dataset.interaction = interaction ? 'on' : 'off';
+    if (state === 'running' || state === 'ambient') frame = requestAnimationFrame(tick);
     else {
       pulses.length = 0;
       trails.length = 0;
@@ -379,7 +397,7 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
       paint(0, true);
     }
   }
-  const blocked = () => destroyed || document.hidden || !visible;
+  const blocked = () => destroyed || !interaction || document.hidden || !visible;
   const move = (event: PointerEvent) => {
     if (
       press &&
@@ -459,6 +477,23 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
     leave();
     sync();
   };
+  function listen(value: boolean) {
+    if (listening === value) return;
+    listening = value;
+    if (value) {
+      document.addEventListener('pointermove', move, { passive: true, capture: true });
+      document.addEventListener('pointerdown', down, { passive: true, capture: true });
+      document.addEventListener('pointerup', up, { passive: true, capture: true });
+      document.addEventListener('pointercancel', leave, { passive: true });
+      document.documentElement.addEventListener('pointerleave', leave, { passive: true });
+    } else {
+      document.removeEventListener('pointermove', move, true);
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('pointerup', up, true);
+      document.removeEventListener('pointercancel', leave);
+      document.documentElement.removeEventListener('pointerleave', leave);
+    }
+  }
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     sync();
@@ -466,11 +501,7 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
   observer.observe(layer);
   const dimensions = new ResizeObserver(resize);
   dimensions.observe(layer);
-  document.addEventListener('pointermove', move, { passive: true, capture: true });
-  document.addEventListener('pointerdown', down, { passive: true, capture: true });
-  document.addEventListener('pointerup', up, { passive: true, capture: true });
-  document.addEventListener('pointercancel', leave, { passive: true });
-  document.documentElement.addEventListener('pointerleave', leave, { passive: true });
+  listen(interaction);
   window.addEventListener('scroll', scroll, { passive: true });
   window.addEventListener('resize', resize, { passive: true });
   window.addEventListener('blur', leave);
@@ -478,8 +509,27 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
   resize();
   sync();
   return {
+    setMotion(next) {
+      if (destroyed || (ambient === next.ambient && interaction === next.interaction)) return;
+      ambient = next.ambient;
+      interaction = next.interaction;
+      listen(interaction);
+      if (!interaction) {
+        pulses.length = 0;
+        trails.length = 0;
+        relays.length = 0;
+        pointer.strength = 0;
+        pointerInside = false;
+        press = null;
+        lastInteraction = -100;
+        energy = 0.55;
+      }
+      paint(0, !ambient && !interaction);
+      sync();
+    },
     destroy() {
       destroyed = true;
+      listen(false);
       cancelAnimationFrame(frame);
       observer.disconnect();
       dimensions.disconnect();
@@ -487,11 +537,6 @@ export function createSiteScene(svg: SVGSVGElement): SiteScene {
       window.removeEventListener('resize', resize);
       window.removeEventListener('blur', leave);
       document.removeEventListener('visibilitychange', visibility);
-      document.removeEventListener('pointermove', move, true);
-      document.removeEventListener('pointerdown', down, true);
-      document.removeEventListener('pointerup', up, true);
-      document.removeEventListener('pointercancel', leave);
-      document.documentElement.removeEventListener('pointerleave', leave);
       pulses.length = 0;
       trails.length = 0;
       relays.length = 0;
