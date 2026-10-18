@@ -70,7 +70,7 @@ test('interaction crosses text, opaque cards and section boundaries without mask
   for (const theme of ['Dark', 'Light']) {
     await page.getByRole('button', { name: 'Choose color theme' }).click();
     await page.getByRole('radio', { name: theme, exact: true }).check();
-    for (const selector of ['h1', '.hero-system', '#features h2', '.product-window']) {
+    for (const selector of ['h1', '.hero-system', '#features h2', '.product-demo']) {
       const target = page.locator(selector).first();
       await target.scrollIntoViewIfNeeded();
       await page.clock.runFor(100);
