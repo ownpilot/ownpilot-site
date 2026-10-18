@@ -6,6 +6,10 @@ import {
   pruneFieldEffects,
   pulseRadius,
   stepFieldNode,
+  createFieldRelays,
+  pruneFieldRelays,
+  relayEnvelope,
+  type FieldNode,
   type FieldPulse,
 } from '../src/lib/ambient-field';
 
@@ -23,6 +27,68 @@ test('field fills wide viewports while mobile and 4K budgets remain bounded', ()
     expect(Math.max(...nodes.map((n) => n.x))).toBeGreaterThan(width * 0.8);
     expect(Math.max(...nodes.map((n) => n.y))).toBeGreaterThan(height * 0.7);
   }
+});
+
+test('cursor flow keeps orbiting, stays bounded and settles after leaving at different frame rates', () => {
+  const base = { homeX: 400, homeY: 400, x: 400, y: 400, depth: 1, phase: 0, kind: 0 };
+  const results: FieldNode[] = [];
+  for (const hz of [30, 60, 120]) {
+    const node = { ...base };
+    let midpoint = { ...node };
+    for (let i = 1; i <= hz * 4; i++) {
+      stepFieldNode(node, i / hz, 1 / hz, { x: 360, y: 400, strength: 1 }, [], 0);
+      expect(Math.hypot(node.x - base.x, node.y - base.y)).toBeLessThan(180);
+      if (i === hz * 2) midpoint = { ...node };
+    }
+    expect(Math.hypot(node.x - midpoint.x, node.y - midpoint.y)).toBeGreaterThan(40);
+    results.push({ ...node });
+    for (let i = 1; i <= hz * 4; i++)
+      stepFieldNode(node, 4 + i / hz, 1 / hz, { x: 360, y: 400, strength: 0 }, [], 0);
+    expect(Math.hypot(node.x - 400, node.y - 415)).toBeLessThan(0.01);
+  }
+  expect(Math.hypot(results[0].x - results[2].x, results[0].y - results[2].y)).toBeLessThan(1);
+});
+
+test('click chains reach unique neighbours in order, weaken, affect their targets and fully expire', () => {
+  const nodes = [40, 130, 220, 310, 900].map((x) => ({
+    homeX: x,
+    homeY: 100,
+    x,
+    y: 100,
+    depth: 1,
+    phase: 0,
+    kind: 0,
+  }));
+  const chain = createFieldRelays(nodes, 0, 100, 0, 1000);
+  expect(chain).toHaveLength(AMBIENT_FIELD.relayHops);
+  expect(new Set(chain.map((r) => r.node)).size).toBe(chain.length);
+  chain.forEach((relay, i) => {
+    expect(relay.node).toBe(nodes[i]);
+    expect(relay.born).toBeGreaterThan(relay.start);
+    expect(relayEnvelope(relay, relay.born - 0.01)).toBe(0);
+    expect(relayEnvelope(relay, relay.born + AMBIENT_FIELD.relayLife)).toBe(0);
+    if (i) {
+      expect(relay.start).toBe(chain[i - 1].born);
+      expect(relay.gain).toBeLessThan(chain[i - 1].gain);
+    }
+  });
+  const target = chain[0].node;
+  const baseline = { ...target };
+  const pointer = { x: 0, y: 0, strength: 0 };
+  const time = chain[0].born + AMBIENT_FIELD.relayLife / 2;
+  stepFieldNode(target, time, 1 / 60, pointer, [], 0, chain);
+  stepFieldNode(baseline, time, 1 / 60, pointer, [], 0);
+  expect(Math.hypot(target.x - baseline.x, target.y - baseline.y)).toBeGreaterThan(1);
+  const far = { ...nodes[4] },
+    farControl = { ...nodes[4] };
+  stepFieldNode(far, time, 1 / 60, pointer, [], 0, chain);
+  stepFieldNode(farControl, time, 1 / 60, pointer, [], 0);
+  expect(far).toEqual(farControl);
+  expect(createFieldRelays([nodes[4]], 0, 100, 0)).toEqual([]);
+  // Later clicks can arrive before an earlier chain's last hop.
+  chain.push(...createFieldRelays(nodes, 0, 100, 0.01));
+  pruneFieldRelays(chain, 3);
+  expect(chain).toEqual([]);
 });
 
 test('rapid clicks stay capped, vary coherently, expire, and never grow beyond their radius', () => {

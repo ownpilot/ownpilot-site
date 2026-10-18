@@ -20,6 +20,14 @@ export const AMBIENT_FIELD = {
   pulseForce: 85,
   maxPulses: 6,
   mobilePulses: 3,
+  relayStep: 210,
+  relayRadius: 380,
+  relaySpeed: 620,
+  relayLife: 0.65,
+  relayHops: 4,
+  mobileRelayHops: 3,
+  maxRelays: 24,
+  mobileRelays: 9,
   trailLife: 0.9,
   maxTrails: 16,
   idleAfter: 5,
@@ -34,10 +42,72 @@ export type FieldNode = {
   depth: number;
   phase: number;
   kind: number;
+  orbitAngle?: number;
 };
 export type FieldPulse = { x: number; y: number; born: number; variant: number };
 export type FieldTrail = { x: number; y: number; born: number };
 export type FieldPointer = { x: number; y: number; strength: number };
+export type FieldRelay = {
+  node: FieldNode;
+  source: FieldNode | null;
+  sourceX: number;
+  sourceY: number;
+  start: number;
+  born: number;
+  gain: number;
+};
+
+/** Schedule a short nearest-neighbour chain once per click, never recursively. */
+export function createFieldRelays(
+  nodes: FieldNode[],
+  x: number,
+  y: number,
+  time: number,
+  hops: number = AMBIENT_FIELD.relayHops,
+): FieldRelay[] {
+  const relays: FieldRelay[] = [];
+  const visited = new Set<FieldNode>();
+  let source: FieldNode | null = null;
+  let sourceX = x,
+    sourceY = y,
+    start = time;
+  for (let hop = 0; hop < Math.min(hops, AMBIENT_FIELD.relayHops); hop++) {
+    let nearest: FieldNode | null = null;
+    let distance: number = AMBIENT_FIELD.relayStep;
+    for (const node of nodes) {
+      if (visited.has(node) || Math.hypot(node.x - x, node.y - y) >= AMBIENT_FIELD.relayRadius)
+        continue;
+      const gap = Math.hypot(node.x - sourceX, node.y - sourceY);
+      if (gap < distance) {
+        nearest = node;
+        distance = gap;
+      }
+    }
+    if (!nearest) break;
+    const born = start + distance / AMBIENT_FIELD.relaySpeed + 0.07;
+    relays.push({ node: nearest, source, sourceX, sourceY, start, born, gain: 0.75 * 0.67 ** hop });
+    visited.add(nearest);
+    source = nearest;
+    sourceX = nearest.x;
+    sourceY = nearest.y;
+    start = born;
+  }
+  return relays;
+}
+
+export function relayEnvelope(relay: FieldRelay, time: number) {
+  if (time < relay.born || time >= relay.born + AMBIENT_FIELD.relayLife) return 0;
+  const age = (time - relay.born) / AMBIENT_FIELD.relayLife;
+  return Math.sin(Math.PI * age) ** 2 * relay.gain;
+}
+
+export function pruneFieldRelays(relays: FieldRelay[], time: number) {
+  // Chains from successive clicks overlap; arrival times need not be sorted.
+  let kept = 0;
+  for (const relay of relays)
+    if (time < relay.born + AMBIENT_FIELD.relayLife) relays[kept++] = relay;
+  relays.length = kept;
+}
 
 export function createFieldNodes(width: number, height: number): FieldNode[] {
   const count =
@@ -105,6 +175,7 @@ export function stepFieldNode(
   pointer: FieldPointer,
   pulses: FieldPulse[],
   motionTime: number = time,
+  relays: FieldRelay[] = [],
 ) {
   const drift = AMBIENT_FIELD.driftDistance * node.depth;
   const speed = AMBIENT_FIELD.driftSpeed * (0.65 + node.depth * 0.7);
@@ -118,8 +189,21 @@ export function stepFieldNode(
     const force = falloff * AMBIENT_FIELD.pointerForce * pointer.strength * node.depth;
     targetX += (dx / Math.max(1, distance)) * force;
     targetY += (dy / Math.max(1, distance)) * force;
-    // A tangential current and gentle outer pull make the field feel fluid.
-    const orbit = falloff * 34 * pointer.strength * node.depth;
+    // Advect each home vector around the cursor instead of settling at a fixed
+    // tangential offset. Depth and a slow breathing current vary the angular speed.
+    const hx = node.homeX - pointer.x,
+      hy = node.homeY - pointer.y;
+    const homeDistance = Math.hypot(hx, hy);
+    const influence =
+      Math.max(0, 1 - homeDistance / AMBIENT_FIELD.pointerRadius) ** 2 * pointer.strength;
+    const angularSpeed = 1.6 + node.depth * 0.8 + Math.sin(motionTime * 0.7 + node.phase) * 0.25;
+    node.orbitAngle =
+      ((node.orbitAngle ?? 0) + Math.min(dt, 0.05) * angularSpeed * influence) % (Math.PI * 2);
+    const angle = Math.atan2(hy, hx) + node.orbitAngle;
+    const radius = Math.max(65 + node.depth * 15, homeDistance);
+    targetX += (Math.cos(angle) * radius - hx) * influence;
+    targetY += (Math.sin(angle) * radius - hy) * influence;
+    const orbit = falloff * 16 * pointer.strength * node.depth;
     const pull =
       Math.sin((distance / AMBIENT_FIELD.pointerRadius) * Math.PI) ** 2 *
       (distance / AMBIENT_FIELD.pointerRadius) *
@@ -128,6 +212,16 @@ export function stepFieldNode(
       node.depth;
     targetX += (-dy / Math.max(1, distance)) * orbit - (dx / Math.max(1, distance)) * pull;
     targetY += (dx / Math.max(1, distance)) * orbit - (dy / Math.max(1, distance)) * pull;
+  }
+  for (const relay of relays) {
+    if (relay.node !== node) continue;
+    const response = relayEnvelope(relay, time);
+    if (!response) continue;
+    const rx = node.homeX - relay.sourceX,
+      ry = node.homeY - relay.sourceY;
+    const length = Math.max(1, Math.hypot(rx, ry));
+    targetX += ((rx - ry * 0.4) / length) * response * 48 * node.depth;
+    targetY += ((ry + rx * 0.4) / length) * response * 48 * node.depth;
   }
   for (const pulse of pulses) {
     const age = time - pulse.born;

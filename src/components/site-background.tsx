@@ -68,6 +68,7 @@ export function SiteBackground() {
               <path d="M-44 0h10M34 0h10M0-44v10M0 34v10" opacity="0.3" />
             </g>
             <g data-echoes="" />
+            <g data-relays="" />
             <g data-trails="" />
             <g data-pulses="" />
           </g>

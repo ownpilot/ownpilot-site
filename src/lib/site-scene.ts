@@ -2,12 +2,16 @@ import {
   AMBIENT_FIELD as C,
   addFieldPulse,
   createFieldNodes,
+  createFieldRelays,
+  pruneFieldRelays,
+  relayEnvelope,
   pruneFieldEffects,
   pulseRadius,
   stepFieldNode,
   type FieldNode,
   type FieldPulse,
   type FieldTrail,
+  type FieldRelay,
 } from './ambient-field';
 
 export type SiteScene = { setPaused: (paused: boolean) => void; destroy: () => void };
@@ -43,6 +47,7 @@ export function createSiteScene(
     pulseLayer = group('pulses'),
     trailLayer = group('trails'),
     echoLayer = group('echoes'),
+    relayLayer = group('relays'),
     pointerView = group('pointer');
   const routeLayer = group('routes');
   const routeElements = [...routeLayer.querySelectorAll('path')];
@@ -72,7 +77,20 @@ export function createSiteScene(
     ray: SVGPathElement;
   }[] = [];
   const pulses: FieldPulse[] = [],
-    trails: FieldTrail[] = [];
+    trails: FieldTrail[] = [],
+    relays: FieldRelay[] = [];
+  const relayViews = Array.from({ length: C.maxRelays }, () => {
+    const view = element('g', {
+      class: 'field-relay field-teal',
+      opacity: 0,
+      'data-active': 'false',
+    });
+    const path = element('path', { pathLength: 1, 'stroke-dasharray': '0.15 1' });
+    const ring = element('circle', { r: 0, opacity: 0 });
+    view.append(path, ring);
+    relayLayer.append(view);
+    return { view, path, ring };
+  });
   const links = Array.from({ length: C.maxLinks }, () => {
     const path = element('path', { opacity: 0 });
     linkLayer.append(path);
@@ -147,6 +165,7 @@ export function createSiteScene(
     });
     pulses.length = 0;
     trails.length = 0;
+    relays.length = 0;
     pointer.strength = 0;
     pointerInside = false;
     if (!frame) paint(0, media.matches || paused);
@@ -166,7 +185,7 @@ export function createSiteScene(
       const home = wrap(node.originY - sceneScroll * n.depth * C.parallax);
       if (Math.abs(home - n.homeY) > height * 0.5) n.y = home;
       n.homeY = home;
-      if (!still) stepFieldNode(n, time, dt, pointer, pulses, motionTime);
+      if (!still) stepFieldNode(n, time, dt, pointer, pulses, motionTime, relays);
       const alpha = edge(n.x, n.y) * (0.25 + n.depth * 0.5);
       if (alpha <= 0.001) {
         if (node.view.style.display !== 'none') node.view.style.display = 'none';
@@ -196,7 +215,11 @@ export function createSiteScene(
               Math.max(0, 1 - radius / C.pulseRadius),
           );
         }
-      const response = still ? 0 : Math.max(proximity, impact);
+      let relayResponse = 0;
+      if (!still)
+        for (const relay of relays)
+          if (relay.node === n) relayResponse = Math.max(relayResponse, relayEnvelope(relay, time));
+      const response = still ? 0 : Math.max(proximity, impact, relayResponse);
       set(node.echo, 'opacity', response * alpha * 0.9);
       set(node.ray, 'opacity', still ? 0 : proximity * alpha * 0.28);
       if (response > 0.005) write(node.echo, 'transform', node.view.getAttribute('transform')!);
@@ -237,6 +260,40 @@ export function createSiteScene(
       }
     }
     links.slice(used).forEach((path) => write(path, 'opacity', '0'));
+    relayViews.forEach(({ view, path, ring }, i) => {
+      const relay = relays[i];
+      if (still || !relay || time < relay.start) {
+        write(view, 'opacity', '0');
+        write(view, 'data-active', 'false');
+        return;
+      }
+      write(view, 'data-active', 'true');
+      const age = Math.max(0, time - relay.born);
+      const travelling = time < relay.born;
+      const response = relayEnvelope(relay, time);
+      set(view, 'opacity', travelling ? relay.gain * 0.25 : response * 0.55);
+      set(path, 'opacity', travelling ? 1 : 0);
+      if (travelling) {
+        const x = relay.source?.x ?? relay.sourceX;
+        const y = relay.source?.y ?? relay.sourceY;
+        write(
+          path,
+          'd',
+          `M${x.toFixed(1)} ${y.toFixed(1)}Q${((x + relay.node.x) / 2 + 14).toFixed(1)} ${((y + relay.node.y) / 2 - 14).toFixed(1)} ${relay.node.x.toFixed(1)} ${relay.node.y.toFixed(1)}`,
+        );
+        set(
+          path,
+          'stroke-dashoffset',
+          -Math.min(1, (time - relay.start) / (relay.born - relay.start)) * 0.85,
+        );
+      }
+      set(ring, 'opacity', travelling ? 0 : 1);
+      if (!travelling) {
+        set(ring, 'cx', relay.node.x);
+        set(ring, 'cy', relay.node.y);
+        set(ring, 'r', 5 + (age / C.relayLife) * 30);
+      }
+    });
     set(pointerView, 'opacity', still ? 0 : pointer.strength);
     if (!still && pointer.strength > 0.005)
       write(pointerView, 'transform', `translate(${pointer.x.toFixed(1)} ${pointer.y.toFixed(1)})`);
@@ -306,6 +363,7 @@ export function createSiteScene(
     sceneScroll += (scrollY - sceneScroll) * (1 - Math.exp(-dt * 7));
     pruneFieldEffects(pulses, time, C.pulseLife);
     pruneFieldEffects(trails, time, C.trailLife);
+    pruneFieldRelays(relays, time);
     paint(dt);
     frame = requestAnimationFrame(tick);
   }
@@ -328,6 +386,7 @@ export function createSiteScene(
     else {
       pulses.length = 0;
       trails.length = 0;
+      relays.length = 0;
       pointer.strength = 0;
       pointerInside = false;
       if (media.matches) sceneScroll = 0;
@@ -391,6 +450,17 @@ export function createSiteScene(
       time,
       width <= C.mobileBreakpoint ? C.mobilePulses : C.maxPulses,
     );
+    relays.push(
+      ...createFieldRelays(
+        nodes.map((node) => node.model),
+        event.clientX,
+        event.clientY,
+        time,
+        width <= C.mobileBreakpoint ? C.mobileRelayHops : C.relayHops,
+      ),
+    );
+    const relayLimit = width <= C.mobileBreakpoint ? C.mobileRelays : C.maxRelays;
+    if (relays.length > relayLimit) relays.splice(0, relays.length - relayLimit);
     lastInteraction = performance.now() / 1000;
   };
   const scroll = () => {
@@ -451,6 +521,7 @@ export function createSiteScene(
       pulseLayer.replaceChildren();
       trailLayer.replaceChildren();
       echoLayer.replaceChildren();
+      relayLayer.replaceChildren();
     },
   };
 }

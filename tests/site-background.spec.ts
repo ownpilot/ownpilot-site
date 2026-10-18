@@ -15,7 +15,9 @@ test('inactive effect slots stop generating DOM mutations', async ({ page }) => 
           count += records.filter(
             (record) =>
               record.target instanceof Element &&
-              record.target.matches('.field-pulse[data-active="false"], .field-trail'),
+              record.target.matches(
+                '.field-pulse[data-active="false"], .field-relay[data-active="false"], .field-trail',
+              ),
           ).length;
         });
         observer.observe(svg, { attributes: true, subtree: true });
@@ -169,6 +171,40 @@ test('background waves are visible, capped, expire, and ignore product controls'
   ).toBe(true);
 });
 
+test('clicks send fading signals between nearby shapes with a fixed relay budget', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-10-18T12:00:00Z') });
+  await page.goto('/');
+  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'running');
+  await page.clock.pauseAt(new Date('2026-10-18T12:01:00Z'));
+  await page.clock.runFor(1800);
+  await page.mouse.click(18, 210);
+  await page.clock.runFor(100);
+  const active = page.locator('.field-relay[data-active="true"]');
+  expect(await active.count()).toBeGreaterThan(0);
+  expect(await active.count()).toBeLessThanOrEqual(4);
+  await page.clock.runFor(450);
+  expect(
+    await active.evaluateAll((nodes) =>
+      nodes.some(
+        (n) =>
+          Number(n.getAttribute('opacity')) > 0.01 &&
+          Number(n.querySelector('circle')?.getAttribute('opacity')) > 0,
+      ),
+    ),
+  ).toBe(true);
+  for (let i = 0; i < 30; i++) await page.mouse.click(18, 210);
+  await page.clock.runFor(100);
+  expect(await active.count()).toBeLessThanOrEqual(24);
+  await expect(page.locator('.field-relay')).toHaveCount(24);
+  await page.clock.runFor(3000);
+  await expect(active).toHaveCount(0);
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page.clock.runFor(100);
+  await expect(active).toHaveCount(0);
+});
+
 test('hidden and nonvisible SVGs stop their frame loops and resume', async ({ page }) => {
   await page.goto('/');
   const field = page.locator('.site-field');
@@ -248,6 +284,7 @@ test('mobile taps are bounded and a real touch swipe still scrolls the page', as
     .poll(() => page.locator('.field-pulse[data-active="true"]').count())
     .toBeGreaterThan(0);
   expect(await page.locator('.field-pulse[data-active="true"]').count()).toBeLessThanOrEqual(3);
+  expect(await page.locator('.field-relay[data-active="true"]').count()).toBeLessThanOrEqual(9);
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
