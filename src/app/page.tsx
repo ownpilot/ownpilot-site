@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Github } from '@/components/github-icon';
 import { HeroSystem, ArchitectureDiagram } from '@/components/hero-system';
+import { HeroBackground } from '@/components/hero-background';
 import { ProductPreview } from '@/components/product-preview';
 import { Quickstart } from '@/components/quickstart';
 import { REPO, VERSION, faqs } from '@/lib/site';
@@ -87,56 +88,59 @@ const features = [
 export default function Home() {
   return (
     <main id="main">
-      <section className="hero container" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <Link className="release-pill" href="/changelog/">
-            <span className="status-dot" />
-            <span>v{VERSION}</span>
-            <span className="pill-divider" />A little more autonomous.
-            <ArrowRight size={13} />
-          </Link>
-          <div className="eyebrow hero-eyebrow">
-            <span className="eyebrow-line" />
-            THE PERSONAL AI, ACTUALLY PERSONAL.
-          </div>
-          <h1 id="hero-title">
-            Your AI.
-            <br />
-            Your world.
-            <br />
-            <span>Your rules.</span>
-          </h1>
-          <p className="hero-description">
-            An assistant that connects your models, tools, and memory. Runs on your infrastructure.
-            And works on your terms.
-          </p>
-          <div className="hero-actions">
-            <Link className="button button-primary" href="/docs/getting-started/">
-              Make it yours
-              <ArrowRight size={17} />
+      <section className="hero-stage" aria-labelledby="hero-title">
+        <HeroBackground />
+        <div className="hero container">
+          <div className="hero-copy">
+            <Link className="release-pill" href="/changelog/">
+              <span className="status-dot" />
+              <span>v{VERSION}</span>
+              <span className="pill-divider" />A little more autonomous.
+              <ArrowRight size={13} />
             </Link>
-            <a className="button button-secondary" href={REPO} target="_blank" rel="noreferrer">
-              <Github size={17} />
-              Explore the source
-              <ArrowUpRight size={14} />
-            </a>
+            <div className="eyebrow hero-eyebrow">
+              <span className="eyebrow-line" />
+              THE PERSONAL AI, ACTUALLY PERSONAL.
+            </div>
+            <h1 id="hero-title">
+              Your AI.
+              <br />
+              Your world.
+              <br />
+              <span>Your rules.</span>
+            </h1>
+            <p className="hero-description">
+              An assistant that connects your models, tools, and memory. Runs on your
+              infrastructure. And works on your terms.
+            </p>
+            <div className="hero-actions">
+              <Link className="button button-primary" href="/docs/getting-started/">
+                Make it yours
+                <ArrowRight size={17} />
+              </Link>
+              <a className="button button-secondary" href={REPO} target="_blank" rel="noreferrer">
+                <Github size={17} />
+                Explore the source
+                <ArrowUpRight size={14} />
+              </a>
+            </div>
+            <div className="hero-trust">
+              <span>
+                <Check size={12} />
+                Self-hosted
+              </span>
+              <span>
+                <Check size={12} />
+                MIT licensed
+              </span>
+              <span>
+                <Check size={12} />
+                Cloud or local AI
+              </span>
+            </div>
           </div>
-          <div className="hero-trust">
-            <span>
-              <Check size={12} />
-              Self-hosted
-            </span>
-            <span>
-              <Check size={12} />
-              MIT licensed
-            </span>
-            <span>
-              <Check size={12} />
-              Cloud or local AI
-            </span>
-          </div>
+          <HeroSystem />
         </div>
-        <HeroSystem />
       </section>
       <div className="provider-strip container">
         <span className="tiny-label">
