@@ -17,6 +17,8 @@ Reviewed 2026-10-18 for the standalone OwnPilot site.
 
 ## Brand provenance
 
+- The current social card, `public/og.png`, uses the user's supplied original logo and platform overview as ImageGen references. Its blue/green palette and claw mascot replace the earlier orange/dark SVG sharing artwork. The full-resolution generated master and generation prompt are retained under `assets/`; the production PNG is 1200×630. All Open Graph and Twitter images reference `/og.png`; `social-card.png` remains as a compatibility copy.
+
 - The root `ownpilot_logo.jpeg` contains the compass/shield/neural-core mark. The existing site's `logo.jpeg` and UI raster share that identity. The UI `logo.svg` and existing site's favicon use older alternate geometries, so they were not substituted for the compass mark.
 - `public/brand-original.jpeg` is an unchanged copy of the original raster.
 - `public/logo-mark.svg` is a clean reconstruction with the compass points, shield outline, P-shaped core, blue/green division and neural detail. It is identified as a reconstruction on the brand page; it is not represented as a recovered original vector.

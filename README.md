@@ -61,7 +61,7 @@ Edit `src/lib/docs.ts` for field guides and integrations; `src/lib/site.ts` for 
 
 ## Assets
 
-Vector sources and generated PNGs live under `public/`. Run `npm run assets` to regenerate the social card and application icons with Sharp. Keep generated PNGs committed; normal website builds do not need to regenerate them. See [research notes](docs/research.md) for provenance and verification decisions.
+The canonical social sharing asset is `public/og.png` (1200×630). Its full-resolution, ImageGen-created artwork is preserved at `assets/og-master.png`; `assets/og.prompt.md` records the generation brief and supplied brand references. Run `npm run assets` to export the web-sized OG card, its `social-card.png` compatibility copy, and application icons. Keep the source and generated PNGs committed; normal website builds do not regenerate them. Every page points its Open Graph and Twitter metadata to `/og.png`. The export check verifies the image's dimensions, format, compatibility copy and every page's metadata. See [research notes](docs/research.md) for provenance and verification decisions.
 
 ## Versions verified on 2026-10-18
 

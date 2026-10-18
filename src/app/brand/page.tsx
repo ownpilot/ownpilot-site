@@ -62,7 +62,7 @@ export default function BrandPage() {
           <div className="brand-asset-preview">
             <img
               className="social-preview"
-              src="/social-card.png"
+              src="/og.png"
               width="1200"
               height="630"
               alt="OwnPilot social sharing card"
@@ -70,7 +70,7 @@ export default function BrandPage() {
           </div>
           <h2>A little introduction</h2>
           <p>The site’s social sharing artwork, with space for the message to breathe.</p>
-          <a className="text-link" href="/social-card.png" download>
+          <a className="text-link" href="/og.png" download>
             Download PNG
             <ArrowDownToLine size={15} />
           </a>

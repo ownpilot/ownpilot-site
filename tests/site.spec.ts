@@ -39,6 +39,14 @@ for (const width of [375, 768, 1024, 1440, 1920, 2560, 3840])
         expect(response?.status(), route).toBe(200);
         await expect(page.locator('html')).toHaveAttribute('data-color', theme);
         await expect(page.locator('h1')).toHaveCount(1);
+        await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+          'content',
+          'https://ownpilot.dev/og.png',
+        );
+        await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
+          'content',
+          'https://ownpilot.dev/og.png',
+        );
         await page.evaluate(() => document.fonts.ready);
         const sizes = await page.evaluate(() => ({
           scroll: document.documentElement.scrollWidth,
@@ -175,6 +183,13 @@ for (const theme of ['dark', 'light'])
       expect(result.violations).toEqual([]);
     });
 test('custom domain and export endpoints are served correctly', async ({ request }) => {
+  const og = await request.get('/og.png');
+  expect(og.status()).toBe(200);
+  expect(og.headers()['content-type']).toContain('image/png');
+  const png = await og.body();
+  expect(png.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+  expect(png.readUInt32BE(16)).toBe(1200);
+  expect(png.readUInt32BE(20)).toBe(630);
   expect((await request.get('/CNAME')).status()).toBe(200);
   expect((await (await request.get('/CNAME')).text()).trim()).toBe('ownpilot.dev');
   expect((await request.get('/.nojekyll')).status()).toBe(200);

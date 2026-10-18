@@ -1,10 +1,14 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-const social = await readFile(new URL('../public/social-card.svg', import.meta.url));
-await sharp(social)
-  .png()
-  .toFile(fileURLToPath(new URL('../public/social-card.png', import.meta.url)));
+const social = await readFile(new URL('../assets/og-master.png', import.meta.url));
+const og = await sharp(social)
+  .resize(1200, 630, { fit: 'cover', position: 'centre' })
+  .png({ compressionLevel: 9 })
+  .toBuffer();
+await writeFile(new URL('../public/og.png', import.meta.url), og);
+// Keep existing shared URLs working while metadata uses the new canonical asset.
+await writeFile(new URL('../public/social-card.png', import.meta.url), og);
 const logo = await readFile(new URL('../public/favicon.svg', import.meta.url));
 for (const [size, name] of [
   [192, 'icon-192.png'],
@@ -16,4 +20,4 @@ for (const [size, name] of [
     .png()
     .toFile(fileURLToPath(new URL(`../public/${name}`, import.meta.url)));
 }
-console.log('Social card and application icons generated from SVG sources.');
+console.log('1200×630 OG card, compatibility image and application icons generated.');

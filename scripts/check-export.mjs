@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
+import sharp from 'sharp';
 const root = path.resolve('out');
 let errors = [];
 let count = 0;
@@ -23,9 +24,9 @@ async function walk(dir) {
     const html = await readFile(file, 'utf8');
     if (!html.includes('<h1')) errors.push(`${file}: missing h1`);
     if (!html.includes('rel="canonical"')) errors.push(`${file}: missing canonical`);
-    if (!html.includes('<meta property="og:image" content="https://ownpilot.dev/social-card.png"'))
+    if (!html.includes('<meta property="og:image" content="https://ownpilot.dev/og.png"'))
       errors.push(`${path.relative(root, file)}: missing Open Graph sharing image`);
-    if (!html.includes('<meta name="twitter:image" content="https://ownpilot.dev/social-card.png"'))
+    if (!html.includes('<meta name="twitter:image" content="https://ownpilot.dev/og.png"'))
       errors.push(`${path.relative(root, file)}: missing Twitter sharing image`);
     for (const m of html.matchAll(/(?:href|src)="([^"<>]+)"/g)) {
       let href = m[1].replaceAll('&amp;', '&');
@@ -46,6 +47,7 @@ for (const name of [
   'CNAME',
   'sitemap.xml',
   'robots.txt',
+  'og.png',
   'social-card.png',
   'favicon.svg',
   'icon-192.png',
@@ -55,6 +57,17 @@ for (const name of [
   if (!(await exists(path.join(root, name)))) errors.push(`Missing deployment asset ${name}`);
 if ((await readFile(path.join(root, 'CNAME'), 'utf8')).trim() !== 'ownpilot.dev')
   errors.push('Incorrect custom domain');
+if (await exists(path.join(root, 'og.png'))) {
+  const og = await readFile(path.join(root, 'og.png'));
+  const { width, height, format } = await sharp(og).metadata();
+  if (width !== 1200 || height !== 630 || format !== 'png')
+    errors.push('OG image must be a 1200×630 PNG');
+  if (
+    (await exists(path.join(root, 'social-card.png'))) &&
+    !og.equals(await readFile(path.join(root, 'social-card.png')))
+  )
+    errors.push('Legacy social image must match the current OG card');
+}
 errors = [...new Set(errors)];
 if (errors.length) {
   console.error(errors.join('\n'));

@@ -19,18 +19,18 @@ export const metadata: Metadata = {
     siteName: 'OwnPilot',
     locale: 'en_US',
     url: 'https://ownpilot.dev',
-    title: 'OwnPilot — Intelligence, on your terms.',
+    title: 'OwnPilot — Your AI. Your data. Your rules.',
     description: 'Your models. Your tools. Your data. One self-hosted AI assistant.',
     images: [
       {
-        url: '/social-card.png',
+        url: '/og.png',
         width: 1200,
         height: 630,
-        alt: 'OwnPilot — Your AI. Your infrastructure. Your rules.',
+        alt: 'OwnPilot — Your AI. Your data. Your rules.',
       },
     ],
   },
-  twitter: { card: 'summary_large_image', images: ['/social-card.png'] },
+  twitter: { card: 'summary_large_image', images: ['/og.png'] },
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
