@@ -2363,10 +2363,13 @@
     gap: 8px;
     list-style: none;
     min-width: 0;
+    margin: 0;
+    padding: 0;
   }
   .studio-projects a {
     display: flex;
     flex-direction: column;
+    height: 100%;
     padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: 12px;
