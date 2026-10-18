@@ -4,6 +4,7 @@ import '@fontsource-variable/jetbrains-mono';
 import './globals.css';
 import { Navigation } from '@/components/navigation';
 import { Footer } from '@/components/footer';
+import { SiteBackground } from '@/components/site-background';
 import { REPO, VERSION } from '@/lib/site';
 export const metadata: Metadata = {
   metadataBase: new URL('https://ownpilot.dev'),
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>
+        <SiteBackground />
         <Navigation />
         {children}
         <Footer />

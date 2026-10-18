@@ -622,58 +622,73 @@
     color: var(--muted);
     border-top: 1px solid var(--border);
   }
-  .hero-stage {
-    position: relative;
-    isolation: isolate;
-    overflow: clip;
-    background:
-      radial-gradient(ellipse at 80% 45%, var(--ambient-glow), transparent 60%),
-      radial-gradient(
-        ellipse at 0% 75%,
-        color-mix(in oklab, var(--green) 5%, transparent),
-        transparent 45%
-      );
-  }
-  .hero-background {
-    position: absolute;
+  .site-background {
+    position: fixed;
     inset: 0;
-    z-index: -1;
+    z-index: 3;
     pointer-events: none;
+    overflow: hidden;
+    opacity: 0.75;
+    color: var(--blue);
     mask-image:
-      linear-gradient(to bottom, transparent, black 7%, black 87%, transparent),
+      linear-gradient(to bottom, transparent, black 8%, black 92%, transparent),
       linear-gradient(to right, transparent, black 2%, black 98%, transparent);
     mask-composite: intersect;
   }
-  .hero-field {
+  :root[data-color='light'] .site-background {
+    opacity: 0.62;
+  }
+  .site-field {
     display: block;
     width: 100%;
     height: 100%;
   }
-  .hero-motion-control {
-    position: absolute;
-    right: var(--gutter);
-    bottom: 12px;
+  .field-blue {
+    color: var(--blue);
+  }
+  .field-green {
+    color: var(--green);
+  }
+  .field-teal {
+    color: var(--teal);
+  }
+  .site-field .field-color {
+    transition:
+      color 0.35s,
+      stroke 0.35s;
+  }
+  .field-node,
+  .field-pulse,
+  .field-trail {
+    transform-box: view-box;
+  }
+  .background-motion-slot {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 28px;
+    height: 30px;
+  }
+  .site-motion-control {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 8px 10px;
-    min-height: 32px;
-    border: 1px solid var(--border-soft);
-    border-radius: 30px;
-    background: var(--bg);
+    justify-content: center;
+    width: 28px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-subtle);
     color: var(--muted);
-    font: 9px var(--font-mono);
-    cursor: pointer;
-    transition:
-      border-color 0.2s,
-      color 0.2s;
+    font: 10px var(--font-mono);
   }
-  .hero-motion-control:hover {
+  .site-motion-control:hover {
     color: var(--text);
-    border-color: var(--border);
   }
-  .hero-motion-control:disabled {
+  .site-motion-control:disabled {
     cursor: default;
+  }
+  .hero-stage {
+    position: relative;
   }
   .hero {
     display: grid;
@@ -2458,9 +2473,6 @@
     }
   }
   @media (max-width: 650px) {
-    .hero-stage {
-      padding-bottom: 26px;
-    }
     .studio-card {
       grid-template-columns: minmax(0, 1fr);
       gap: 24px;

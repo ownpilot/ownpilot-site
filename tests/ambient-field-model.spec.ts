@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
 import {
-  HERO_FIELD,
+  AMBIENT_FIELD,
   createFieldNodes,
   addFieldPulse,
   pruneFieldEffects,
   pulseRadius,
   stepFieldNode,
-  fieldPixelRatio,
   type FieldPulse,
-} from '../src/lib/hero-field';
+} from '../src/lib/ambient-field';
 
-test('field fills wide heroes while mobile and 4K budgets remain bounded', () => {
+test('field fills wide viewports while mobile and 4K budgets remain bounded', () => {
   for (const [width, height] of [
     [375, 1080],
     [1440, 800],
@@ -18,25 +17,22 @@ test('field fills wide heroes while mobile and 4K budgets remain bounded', () =>
   ]) {
     const nodes = createFieldNodes(width, height);
     expect(nodes.length).toBeLessThanOrEqual(
-      width <= 650 ? HERO_FIELD.mobileNodes : HERO_FIELD.maxNodes,
+      width <= 650 ? AMBIENT_FIELD.mobileNodes : AMBIENT_FIELD.maxNodes,
     );
     expect(Math.min(...nodes.map((n) => n.x))).toBeLessThan(width * 0.2);
     expect(Math.max(...nodes.map((n) => n.x))).toBeGreaterThan(width * 0.8);
     expect(Math.max(...nodes.map((n) => n.y))).toBeGreaterThan(height * 0.7);
-    const ratio = fieldPixelRatio(width, height, 3);
-    expect(ratio).toBeLessThanOrEqual(HERO_FIELD.maxDpr);
-    expect(width * height * ratio ** 2).toBeLessThanOrEqual(HERO_FIELD.maxPixels + 1);
   }
 });
 
 test('rapid clicks stay capped, vary coherently, expire, and never grow beyond their radius', () => {
   const pulses: FieldPulse[] = [];
   for (let i = 0; i < 200; i++) addFieldPulse(pulses, 300, 200, i * 0.01);
-  expect(pulses).toHaveLength(HERO_FIELD.maxPulses);
+  expect(pulses).toHaveLength(AMBIENT_FIELD.maxPulses);
   expect(new Set(pulses.map((p) => p.variant)).size).toBe(3);
   for (const age of [0, 0.1, 1, 2, 100])
-    expect(pulseRadius(age)).toBeLessThanOrEqual(HERO_FIELD.pulseRadius);
-  pruneFieldEffects(pulses, 4, HERO_FIELD.pulseLife);
+    expect(pulseRadius(age)).toBeLessThanOrEqual(AMBIENT_FIELD.pulseRadius);
+  pruneFieldEffects(pulses, 4, AMBIENT_FIELD.pulseLife);
   expect(pulses).toHaveLength(0);
 });
 

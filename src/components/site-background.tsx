@@ -1,0 +1,86 @@
+'use client';
+
+import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Pause, Play } from 'lucide-react';
+import { createSiteScene, type SiteScene } from '@/lib/site-scene';
+
+/** One decorative viewport follows the visitor across all routes and sections. */
+export function SiteBackground() {
+  const id = useId().replaceAll(':', '');
+  const surface = useRef<SVGSVGElement>(null);
+  const scene = useRef<SiteScene | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [controlHost, setControlHost] = useState<HTMLElement | null>(null);
+  const label = reduced ? 'Reduced motion' : paused ? 'Resume motion' : 'Pause motion';
+
+  useEffect(() => {
+    if (!surface.current) return;
+    scene.current = createSiteScene(surface.current, setReduced);
+    setControlHost(document.getElementById('background-motion-slot'));
+    setReady(true);
+    return () => {
+      scene.current?.destroy();
+      scene.current = null;
+    };
+  }, []);
+  useEffect(() => scene.current?.setPaused(paused), [paused]);
+
+  return (
+    <>
+      <div className="site-background" aria-hidden="true">
+        <svg
+          ref={surface}
+          className="site-field"
+          viewBox="0 0 1000 1000"
+          preserveAspectRatio="none"
+          focusable="false"
+        >
+          <defs>
+            <mask
+              id={`content-${id}`}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width="100%"
+              height="100%"
+              style={{ maskType: 'luminance' }}
+            >
+              <rect width="100%" height="100%" fill="white" />
+              <g data-shields="" />
+            </mask>
+          </defs>
+          <g mask={`url(#content-${id})`} fill="none" stroke="currentColor" strokeWidth="1">
+            <g data-routes="" opacity="0.13">
+              <path d="M-50 180C280 80 700 300 1050 150" />
+              <path d="M-50 540C300 690 640 350 1050 510" />
+              <path d="M-50 850C310 660 670 1000 1050 800" />
+            </g>
+            <g data-links="" />
+            <g data-nodes="" />
+            <g data-trails="" />
+            <g data-pulses="" />
+          </g>
+        </svg>
+      </div>
+      {ready &&
+        controlHost &&
+        createPortal(
+          <button
+            type="button"
+            className="site-motion-control"
+            aria-label={label}
+            aria-pressed={paused || reduced}
+            disabled={reduced}
+            title={reduced ? 'Background motion follows your device preference' : label}
+            onClick={() => setPaused((value) => !value)}
+          >
+            {paused && !reduced ? <Play size={14} /> : <Pause size={14} />}
+          </button>,
+          controlHost,
+        )}
+    </>
+  );
+}

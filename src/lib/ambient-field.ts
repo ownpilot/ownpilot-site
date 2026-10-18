@@ -1,12 +1,12 @@
 /** OwnPilot's compass field. Distances are CSS pixels, times are seconds. */
-export const HERO_FIELD = {
+export const AMBIENT_FIELD = {
   densityArea: 22_000,
   minNodes: 26,
-  maxNodes: 100,
+  maxNodes: 80,
+  maxLinks: 80,
+  parallax: 0.08,
   mobileNodes: 22,
   mobileBreakpoint: 650,
-  maxDpr: 1.75,
-  maxPixels: 3_500_000,
   pointerRadius: 180,
   pointerForce: 38,
   linkRadius: 185,
@@ -15,12 +15,11 @@ export const HERO_FIELD = {
   pulseLife: 1.65,
   pulseRadius: 210,
   maxPulses: 6,
+  mobilePulses: 3,
   trailLife: 0.7,
   maxTrails: 16,
   idleAfter: 5,
   entranceTime: 1.4,
-  dark: ['#59b9e5', '#65d6a3', '#57c8c0'],
-  light: ['#2585b2', '#258b62', '#258e91'],
 } as const;
 
 export type FieldNode = {
@@ -38,11 +37,14 @@ export type FieldPointer = { x: number; y: number; strength: number };
 
 export function createFieldNodes(width: number, height: number): FieldNode[] {
   const count =
-    width <= HERO_FIELD.mobileBreakpoint
-      ? HERO_FIELD.mobileNodes
+    width <= AMBIENT_FIELD.mobileBreakpoint
+      ? AMBIENT_FIELD.mobileNodes
       : Math.min(
-          HERO_FIELD.maxNodes,
-          Math.max(HERO_FIELD.minNodes, Math.round((width * height) / HERO_FIELD.densityArea)),
+          AMBIENT_FIELD.maxNodes,
+          Math.max(
+            AMBIENT_FIELD.minNodes,
+            Math.round((width * height) / AMBIENT_FIELD.densityArea),
+          ),
         );
   const columns = Math.ceil(Math.sqrt((count * width) / height));
   const rows = Math.ceil(count / columns);
@@ -66,11 +68,17 @@ export function createFieldNodes(width: number, height: number): FieldNode[] {
   });
 }
 
-export function addFieldPulse(pulses: FieldPulse[], x: number, y: number, time: number) {
+export function addFieldPulse(
+  pulses: FieldPulse[],
+  x: number,
+  y: number,
+  time: number,
+  limit: number = AMBIENT_FIELD.maxPulses,
+) {
   const previous = pulses.at(-1);
   const variant = previous && time - previous.born < 0.35 ? (previous.variant + 1) % 3 : 0;
   pulses.push({ x, y, born: time, variant });
-  if (pulses.length > HERO_FIELD.maxPulses) pulses.splice(0, pulses.length - HERO_FIELD.maxPulses);
+  if (pulses.length > limit) pulses.splice(0, pulses.length - limit);
 }
 
 export function pruneFieldEffects<T extends { born: number }>(
@@ -82,8 +90,8 @@ export function pruneFieldEffects<T extends { born: number }>(
 }
 
 export function pulseRadius(age: number) {
-  const progress = Math.max(0, Math.min(1, age / HERO_FIELD.pulseLife));
-  return HERO_FIELD.pulseRadius * (1 - (1 - progress) ** 3);
+  const progress = Math.max(0, Math.min(1, age / AMBIENT_FIELD.pulseLife));
+  return AMBIENT_FIELD.pulseRadius * (1 - (1 - progress) ** 3);
 }
 
 export function stepFieldNode(
@@ -92,17 +100,19 @@ export function stepFieldNode(
   dt: number,
   pointer: FieldPointer,
   pulses: FieldPulse[],
+  motionTime: number = time,
 ) {
-  const drift = HERO_FIELD.driftDistance * node.depth;
-  let targetX = node.homeX + Math.sin(time * HERO_FIELD.driftSpeed + node.phase) * drift;
-  let targetY = node.homeY + Math.cos(time * HERO_FIELD.driftSpeed * 0.7 + node.phase) * drift;
+  const drift = AMBIENT_FIELD.driftDistance * node.depth;
+  const speed = AMBIENT_FIELD.driftSpeed * (0.65 + node.depth * 0.7);
+  let targetX = node.homeX + Math.sin(motionTime * speed + node.phase) * drift;
+  let targetY = node.homeY + Math.cos(motionTime * speed * 0.7 + node.phase) * drift;
   const dx = node.x - pointer.x;
   const dy = node.y - pointer.y;
   const distance = Math.hypot(dx, dy);
-  if (distance < HERO_FIELD.pointerRadius && pointer.strength > 0) {
+  if (distance < AMBIENT_FIELD.pointerRadius && pointer.strength > 0) {
     const force =
-      (1 - distance / HERO_FIELD.pointerRadius) ** 2 *
-      HERO_FIELD.pointerForce *
+      (1 - distance / AMBIENT_FIELD.pointerRadius) ** 2 *
+      AMBIENT_FIELD.pointerForce *
       pointer.strength *
       node.depth;
     targetX += (dx / Math.max(1, distance)) * force;
@@ -110,21 +120,17 @@ export function stepFieldNode(
   }
   for (const pulse of pulses) {
     const age = time - pulse.born;
-    if (age < 0 || age >= HERO_FIELD.pulseLife) continue;
+    if (age < 0 || age >= AMBIENT_FIELD.pulseLife) continue;
     const px = node.homeX - pulse.x;
     const py = node.homeY - pulse.y;
     const distance = Math.hypot(px, py);
-    if (distance > HERO_FIELD.pulseRadius) continue;
+    if (distance > AMBIENT_FIELD.pulseRadius) continue;
     const wave = Math.exp(-(((distance - pulseRadius(age)) / 30) ** 2));
-    const force = wave * 30 * (1 - age / HERO_FIELD.pulseLife) * node.depth;
+    const force = wave * 30 * (1 - age / AMBIENT_FIELD.pulseLife) * node.depth;
     targetX += (px / Math.max(1, distance)) * force;
     targetY += (py / Math.max(1, distance)) * force;
   }
   const ease = 1 - Math.exp(-Math.min(dt, 0.05) * 5);
   node.x += (targetX - node.x) * ease;
   node.y += (targetY - node.y) * ease;
-}
-
-export function fieldPixelRatio(width: number, height: number, dpr: number) {
-  return Math.min(dpr, HERO_FIELD.maxDpr, Math.sqrt(HERO_FIELD.maxPixels / (width * height)));
 }

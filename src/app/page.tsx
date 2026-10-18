@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { Github } from '@/components/github-icon';
 import { HeroSystem, ArchitectureDiagram } from '@/components/hero-system';
-import { HeroBackground } from '@/components/hero-background';
 import { ProductPreview } from '@/components/product-preview';
 import { Quickstart } from '@/components/quickstart';
 import { REPO, VERSION, faqs } from '@/lib/site';
@@ -89,7 +88,6 @@ export default function Home() {
   return (
     <main id="main">
       <section className="hero-stage" aria-labelledby="hero-title">
-        <HeroBackground />
         <div className="hero container">
           <div className="hero-copy">
             <Link className="release-pill" href="/changelog/">
