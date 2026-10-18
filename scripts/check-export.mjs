@@ -23,6 +23,10 @@ async function walk(dir) {
     const html = await readFile(file, 'utf8');
     if (!html.includes('<h1')) errors.push(`${file}: missing h1`);
     if (!html.includes('rel="canonical"')) errors.push(`${file}: missing canonical`);
+    if (!html.includes('<meta property="og:image" content="https://ownpilot.dev/social-card.png"'))
+      errors.push(`${path.relative(root, file)}: missing Open Graph sharing image`);
+    if (!html.includes('<meta name="twitter:image" content="https://ownpilot.dev/social-card.png"'))
+      errors.push(`${path.relative(root, file)}: missing Twitter sharing image`);
     for (const m of html.matchAll(/(?:href|src)="([^"<>]+)"/g)) {
       let href = m[1].replaceAll('&amp;', '&');
       if (!href.startsWith('/') || href.startsWith('//')) continue;

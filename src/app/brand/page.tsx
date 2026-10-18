@@ -1,12 +1,11 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import { ArrowDownToLine, ArrowUpRight } from 'lucide-react';
 import { SOURCE } from '@/lib/site';
-export const metadata: Metadata = {
-  title: 'The OwnPilot identity',
-  description: 'OwnPilot logo assets, colors and source attribution.',
-  alternates: { canonical: '/brand/' },
-  openGraph: { url: '/brand/', title: 'OwnPilot brand assets' },
-};
+export const metadata = pageMetadata(
+  'The OwnPilot identity',
+  'OwnPilot logo assets, colors and source attribution.',
+  '/brand/',
+);
 export default function BrandPage() {
   return (
     <main id="main" className="container listing-page">

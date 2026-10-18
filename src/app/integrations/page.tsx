@@ -1,15 +1,13 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { ArrowRight, Plug } from 'lucide-react';
 import { IntegrationsBrowser } from '@/components/integrations-browser';
 import { REPO } from '@/lib/site';
-export const metadata: Metadata = {
-  title: 'Connections without the lock-in',
-  description:
-    'Explore OwnPilot’s documented cloud providers, local model runtimes, channels, MCP, coding agents and app connections.',
-  alternates: { canonical: '/integrations/' },
-  openGraph: { title: 'Connections without the lock-in · OwnPilot', url: '/integrations/' },
-};
+export const metadata = pageMetadata(
+  'Connections without the lock-in',
+  'Explore OwnPilot’s documented cloud providers, local model runtimes, channels, MCP, coding agents and app connections.',
+  '/integrations/',
+);
 export default function Integrations() {
   return (
     <main id="main" className="container listing-page">

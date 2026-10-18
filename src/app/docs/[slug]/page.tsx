@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, Info } from 'lucide-react';
@@ -17,18 +18,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const doc = docs[slug];
-  return doc
-    ? {
-        title: doc.title,
-        description: doc.summary,
-        alternates: { canonical: `/docs/${slug}/` },
-        openGraph: {
-          title: `${doc.title} · OwnPilot`,
-          description: doc.summary,
-          url: `/docs/${slug}/`,
-        },
-      }
-    : {};
+  return doc ? pageMetadata(doc.title, doc.summary, `/docs/${slug}/`) : {};
 }
 function anchor(title: string) {
   return title

@@ -1,13 +1,11 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import { ArrowUpRight, GitCommitHorizontal, Radio } from 'lucide-react';
 import { REPO, VERSION } from '@/lib/site';
-export const metadata: Metadata = {
-  title: 'A little more capable, every release',
-  description:
-    'Follow OwnPilot releases, the current stable version and the official project changelog.',
-  alternates: { canonical: '/changelog/' },
-  openGraph: { url: '/changelog/', title: 'OwnPilot release notes' },
-};
+export const metadata = pageMetadata(
+  'A little more capable, every release',
+  'Follow OwnPilot releases, the current stable version and the official project changelog.',
+  '/changelog/',
+);
 export default function Changelog() {
   return (
     <main id="main" className="container listing-page changelog-page">
