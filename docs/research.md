@@ -25,15 +25,15 @@ Reviewed 2026-10-18 for the standalone OwnPilot site.
 
 ## Design reference findings
 
-| Reference | Observed composition / behavior | OwnPilot interpretation |
-| --- | --- | --- |
-| dockrouter.com | Direct two-part hero, real request-routing illustration with selectable destinations, labeled simulation, docs and installation tabs, disciplined technical captions | Selectable daily/research/code flows, factual labels, a readable route to documentation |
-| uwaserver.com | Light editorial composition, unified-stack SVG, integration strip, product comparison, generous wide layout | One gateway visual, provider choice strip, alternating compositions rather than repeating cards |
-| nothingdns.com | Restrained typography and line work, strong ownership narrative, large network visual, thin section dividers | Quiet grid background, concise ownership copy and data-flow boundaries |
-| cobaltdb.dev | Product hero with technical illustration, source-first navigation, focused docs, appearance popover with three radio preview tiles | Light/Dark/System preview selector, persistent preference and keyboard support |
-| guardianwaf.com | Product symbol integrated into a request flow, hierarchy between statement/description/actions, clear docs boundary | OwnPilot compass at the center of a meaningful model/tool/memory flow |
-| cachestorm.com | HTTP source and full server-rendered page accessible; Next.js static chunks, technical product presentation, SVG branding and source navigation | Static, locally bundled, inspectable content and shared footer alignment |
-| anubis.watch | Web fetch failed and direct HTTPS request failed certificate negotiation | No unverified animation, asset or page detail attributed to this reference; browser certificate warnings were not bypassed |
+| Reference       | Observed composition / behavior                                                                                                                                      | OwnPilot interpretation                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| dockrouter.com  | Direct two-part hero, real request-routing illustration with selectable destinations, labeled simulation, docs and installation tabs, disciplined technical captions | Selectable daily/research/code flows, factual labels, a readable route to documentation                                    |
+| uwaserver.com   | Light editorial composition, unified-stack SVG, integration strip, product comparison, generous wide layout                                                          | One gateway visual, provider choice strip, alternating compositions rather than repeating cards                            |
+| nothingdns.com  | Restrained typography and line work, strong ownership narrative, large network visual, thin section dividers                                                         | Quiet grid background, concise ownership copy and data-flow boundaries                                                     |
+| cobaltdb.dev    | Product hero with technical illustration, source-first navigation, focused docs, appearance popover with three radio preview tiles                                   | Light/Dark/System preview selector, persistent preference and keyboard support                                             |
+| guardianwaf.com | Product symbol integrated into a request flow, hierarchy between statement/description/actions, clear docs boundary                                                  | OwnPilot compass at the center of a meaningful model/tool/memory flow                                                      |
+| cachestorm.com  | HTTP source and full server-rendered page accessible; Next.js static chunks, technical product presentation, SVG branding and source navigation                      | Static, locally bundled, inspectable content and shared footer alignment                                                   |
+| anubis.watch    | Web fetch failed and direct HTTPS request failed certificate negotiation                                                                                             | No unverified animation, asset or page detail attributed to this reference; browser certificate warnings were not bypassed |
 
 All accessible references were fetched directly. CobaltDB, DockRouter, UWAS, NothingDNS and GuardianWAF were additionally inspected in the browser. CobaltDB's appearance menu was opened: native radio choices Light/Dark/System, miniature preview cards, selected check, supporting copy. Geometry and animation were inspected in the delivered Oxog source/CSS.
 

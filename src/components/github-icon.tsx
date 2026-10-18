@@ -1,2 +1,19 @@
 import type { SVGProps } from 'react';
-export function Github({ size = 18, ...props }: SVGProps<SVGSVGElement> & {size?: number}) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d="M9 19c-4.3 1.3-4.3-2.2-6-2.6m12 5v-3.4a3 3 0 0 0-.8-2.3c2.8-.3 5.8-1.4 5.8-6.2a4.8 4.8 0 0 0-1.3-3.3 4.5 4.5 0 0 0-.1-3.3S17.5 2.6 15 4a11.5 11.5 0 0 0-6 0C6.5 2.6 5.4 2.9 5.4 2.9a4.5 4.5 0 0 0-.1 3.3A4.8 4.8 0 0 0 4 9.5c0 4.8 3 5.9 5.8 6.2a3 3 0 0 0-.8 2.3v3.4"/></svg> }
+export function Github({ size = 18, ...props }: SVGProps<SVGSVGElement> & { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M9 19c-4.3 1.3-4.3-2.2-6-2.6m12 5v-3.4a3 3 0 0 0-.8-2.3c2.8-.3 5.8-1.4 5.8-6.2a4.8 4.8 0 0 0-1.3-3.3 4.5 4.5 0 0 0-.1-3.3S17.5 2.6 15 4a11.5 11.5 0 0 0-6 0C6.5 2.6 5.4 2.9 5.4 2.9a4.5 4.5 0 0 0-.1 3.3A4.8 4.8 0 0 0 4 9.5c0 4.8 3 5.9 5.8 6.2a3 3 0 0 0-.8 2.3v3.4" />
+    </svg>
+  );
+}

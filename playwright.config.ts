@@ -1,2 +1,24 @@
-import {defineConfig} from '@playwright/test';
-export default defineConfig({testDir:'./tests',fullyParallel:true,workers:process.env.CI?2:2,forbidOnly:!!process.env.CI,retries:0,timeout:90_000,expect:{timeout:7000},reporter:[['list'],['html',{open:'never'}]],use:{baseURL:process.env.SITE_TEST_URL||'http://127.0.0.1:3000',trace:'retain-on-failure',screenshot:'only-on-failure'},webServer:process.env.SITE_TEST_URL?undefined:{command:'node scripts/preview.mjs',url:'http://127.0.0.1:3000',reuseExistingServer:!process.env.CI,timeout:15000}});
+import { defineConfig } from '@playwright/test';
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: true,
+  workers: process.env.CI ? 2 : 2,
+  forbidOnly: !!process.env.CI,
+  retries: 0,
+  timeout: 90_000,
+  expect: { timeout: 7000 },
+  reporter: [['list'], ['html', { open: 'never' }]],
+  use: {
+    baseURL: process.env.SITE_TEST_URL || 'http://127.0.0.1:3000',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+  },
+  webServer: process.env.SITE_TEST_URL
+    ? undefined
+    : {
+        command: 'node scripts/preview.mjs',
+        url: 'http://127.0.0.1:3000',
+        reuseExistingServer: !process.env.CI,
+        timeout: 15000,
+      },
+});

@@ -1,123 +1,600 @@
 import { dockerCommand, sourceCommand, windowsCommand, SOURCE } from './site';
-export type DocSection = { title: string; text: string[]; bullets?: string[]; code?: string; codeTitle?: string; note?: string };
-export type Doc = { slug: string; title: string; summary: string; group: string; sections: DocSection[]; sources: {label: string; href: string}[] };
-const readme = {label: 'Product README', href: `${SOURCE}/README.md`};
+export type DocSection = {
+  title: string;
+  text: string[];
+  bullets?: string[];
+  code?: string;
+  codeTitle?: string;
+  note?: string;
+};
+export type Doc = {
+  slug: string;
+  title: string;
+  summary: string;
+  group: string;
+  sections: DocSection[];
+  sources: { label: string; href: string }[];
+};
+const readme = { label: 'Product README', href: `${SOURCE}/README.md` };
 const definitions: Doc[] = [
-  {slug:'getting-started', title:'Your first flight', summary:'Install OwnPilot, connect a model, and give your assistant its first task.', group:'Start here', sources:[readme,{label:'Docker Compose configuration',href:`${SOURCE}/docker-compose.yml`},{label:'Environment template',href:`${SOURCE}/.env.example`}], sections:[
-    {title:'A home for your AI',text:['OwnPilot runs on your own infrastructure. Its gateway brings together a web interface, AI providers, tools, persistent memory and autonomous agents. PostgreSQL stores application data; models can run locally or through a cloud provider.','The Docker path below builds the product from its source. You need Git, Docker, Docker Compose, available disk space and a provider API key or a compatible local model. Building the image can take a few minutes.']},
-    {title:'01 · Start with Docker',text:['Clone the product repository and copy its environment template. Before running the final command, edit .env and replace POSTGRES_PASSWORD with a strong, unique password.'],code:dockerCommand,codeTitle:'Docker · macOS / Linux',note:'The current Compose file reads POSTGRES_PASSWORD from the environment. Copying and editing .env is required for a predictable setup; do not rely on older “no .env needed” instructions.'},
-    {title:'Using Windows PowerShell?',text:['Use Copy-Item instead of cp. Docker Desktop must be running with Linux containers enabled. Set the database password in .env before starting Compose.'],code:windowsCommand,codeTitle:'PowerShell'},
-    {title:'02 · Meet your assistant',text:['Open http://localhost:8080 after the gateway and database are healthy. The production container serves the UI and API together. Go to Settings → Config Center to add your provider credentials or configure your local model endpoint.','Provider API keys are managed through Config Center or the product CLI, rather than hard-coded in this website or pasted into chat. Pick a model with tool-calling support for workflows that use tools.']},
-    {title:'03 · Start small',text:['Try a simple request: “Create a note called Project ideas and add three ideas for a weekend project.” Review the tool execution and confirm that the note appears in your personal data.','Then try a recurring briefing or a focused research agent. Review permissions, execution limits and budgets before allowing background work. The examples on this website illustrate workflows; they are not connected to a running OwnPilot instance.']},
-    {title:'Before you share your instance',text:['Local development defaults are not a complete internet-facing deployment. Configure API authentication, set a UI password, put the gateway behind HTTPS, and read the security policy before exposing it. Keep backups of your database and encryption key material.']},
-  ]},
-  {slug:'installation',title:'Installation',summary:'Docker, source development, prerequisites and first-run checks.',group:'Start here',sources:[readme,{label:'Compose source',href:`${SOURCE}/docker-compose.yml`}],sections:[
-    {title:'Choose your setup',text:['Docker combines the built web UI and gateway in one container and runs PostgreSQL alongside it. Source development runs the Vite UI and gateway separately and is useful when contributing to OwnPilot.','The product requires Node.js 22+, pnpm 10+ and PostgreSQL 16+ for source development. These product requirements are separate from the versions used to build this website.']},
-    {title:'Docker installation',text:['Copy .env.example, set POSTGRES_PASSWORD to a strong value, then build and start the postgres profile. Visit http://localhost:8080.'],code:dockerCommand,codeTitle:'Docker Compose'},
-    {title:'Develop from source',text:['Install the product prerequisites. Start only the postgres service for source development; the gateway will run through pnpm dev. Update POSTGRES_PASSWORD in .env first.'],code:sourceCommand,codeTitle:'Source development'},
-    {title:'Check your services',text:['The development web UI is at http://localhost:8199. The gateway is at http://localhost:8080. The Compose database is mapped to 127.0.0.1:25432 on the host. The UI development server proxies API and WebSocket requests to the gateway.'],code:'docker compose --profile postgres ps\ndocker compose --profile postgres logs --tail=100 gateway',codeTitle:'Inspect the Docker services'},
-    {title:'Troubleshooting',text:['If the database is unhealthy, check that .env exists and POSTGRES_PASSWORD is set. If a port is already in use, review the product’s PORT and UI_PORT settings. On Windows, use 127.0.0.1 for the host database connection to avoid IPv4/IPv6 localhost differences.','A failed model request usually needs a provider configuration or model-capability check in Config Center. Keep credentials out of public issues and redact logs before sharing them.']},
-  ]},
-  {slug:'architecture',title:'A system you can understand',summary:'Follow a request from your interface through the gateway to models, tools and storage.',group:'Understand',sources:[readme],sections:[
-    {title:'One gateway, several ways in',text:['OwnPilot’s Hono gateway serves HTTP APIs and coordinates agent execution. The web UI uses HTTP, Server-Sent Events and WebSockets. Telegram and WhatsApp are additional channel adapters; MCP clients and servers provide another integration boundary.','The production container bundles the web UI with the gateway at port 8080. During source development, the Vite UI runs on port 8199 and proxies requests to the gateway.']},
-    {title:'The request pipeline',text:['The documented message pipeline passes through audit, persistence, post-processing, context injection, agent execution and response handling. Context can include relevant persistent memories, agent instructions and tool-discovery information.','The provider router selects a configured model. The agent can discover and invoke tools as needed, subject to tool policies and approvals. Outputs and data mutations can be streamed to the interface.']},
-    {title:'Tools without an enormous prompt',text:['The meta-tool proxy presents four discovery and execution entry points to the model: search_tools, get_tool_help, use_tool and batch_use_tool. The wider tool catalog remains available through dynamic discovery.','Qualified tool namespaces identify origins: core., custom., plugin., skill. and mcp. Extensions and external MCP servers expand what the assistant can do.']},
-    {title:'Persistence and events',text:['PostgreSQL stores conversations, personal data, settings, goals, agent state and other application records. Persistent memories support vector search and automatic context injection.','A unified EventBus connects services. WebSocket broadcasts update the UI, while background agents, triggers and workflows coordinate longer-running activity. Optional MQTT support connects registered edge devices.']},
-    {title:'Hosting boundaries',text:['OwnPilot is the application you self-host. AI inference may happen at a separate cloud API or a local model endpoint. Connected apps and tools contact their configured services. Self-hosting the gateway does not automatically make those external calls local.']},
-  ]},
-  {slug:'agents',title:'Meet your working crew',summary:'Chat agents, Claw runtimes, Soul identities and multi-agent crews.',group:'Build with OwnPilot',sources:[readme],sections:[
-    {title:'Start with a focused agent',text:['Configure an agent with a system prompt, model preference, assigned tools and execution limits. Give it a narrow role and a clear completion condition. The AI Agent Creator can help turn a natural-language description into an agent configuration for review.']},
-    {title:'Claw agents: a workspace for the job',text:['A Claw combines model reasoning, a dedicated file workspace, tools, CLI access, browser automation and coding-agent integrations. Four execution modes cover single tasks, continuous work, intervals and event-driven reactions.','Persistent .claw/ files — INSTRUCTIONS.md, TASKS.md, MEMORY.md and LOG.md — guide work across cycles. The management interface includes files, history, audit, output and chat views.']},
-    {title:'Soul agents: identity that persists',text:['Soul agents have a configurable role, mission, personality, voice and boundaries. Scheduled heartbeats run checklists, while evolution tracking records learnings and feedback.','Crews assign different roles to multiple agents and support delegation and inter-agent messages. Prebuilt templates provide starting points for briefings, monitoring and code review.']},
-    {title:'Put boundaries around autonomy',text:['Set allowed and blocked actions, approval requirements and cost limits. Start with assisted or supervised operation and inspect activity before expanding autonomy. Models and external APIs can incur usage charges.','Claw escalation asks for human input when environment changes are needed. OwnPilot’s controls help govern tool use; review each integration’s own access and permissions as well.']},
-    {title:'Coding agents',text:['OwnPilot can orchestrate installed Claude Code, Codex and Gemini CLI tools. Sessions support streamed terminal output, headless or interactive execution and stored results. Install and authenticate the chosen CLI separately; OwnPilot does not provide those subscriptions or credentials.']},
-  ]},
-  {slug:'tools',title:'Give your AI useful hands',summary:'Built-in tools, MCP servers, extensions, skills and your own CLI tools.',group:'Build with OwnPilot',sources:[readme],sections:[
-    {title:'A discoverable tool catalog',text:['The documented built-in catalog covers personal data, files, web access, email, code execution, Git, search, artifacts, browser automation and edge devices. The model discovers relevant tools instead of receiving every definition in each prompt.']},
-    {title:'Connect through MCP',text:['OwnPilot can act as an MCP client to use tools from external servers. Filesystem, GitHub and search servers are examples; configure each server and review its permissions.','It also acts as an MCP server so compatible clients can access OwnPilot tools. Keep authentication and network access appropriate to the tools you expose.']},
-    {title:'Skills and extensions',text:['Skills use the SKILL.md format for instruction-based knowledge packages. Extensions can bundle custom tools, triggers, services and configuration. The Extension SDK can call existing tools through utils.callTool().','The product includes default extensions for daily briefings, a knowledge base, project tracking, search, automation and contact enrichment. Third-party packages require their own trust and permission review.']},
-    {title:'Bring a CLI',text:['OwnPilot detects supported installed CLI tools from PATH and lets you register custom binaries. Policies mark tools as allowed, prompt or blocked. Risk metadata feeds the approval flow.','Custom JavaScript tools can also be created at runtime. Read the product’s sandbox and host-access policy before enabling code that can access your environment.']},
-  ]},
-  {slug:'providers',title:'Your choice of intelligence',summary:'Cloud providers, aggregators, local models and routing strategies.',group:'Connect',sources:[readme],sections:[
-    {title:'Native providers',text:['The README documents direct integrations for OpenAI, Anthropic, Google and Zhipu. Configure credentials in Settings → Config Center. Streaming, tool use and provider-specific capabilities depend on the selected model and configuration.']},
-    {title:'Aggregators and compatible endpoints',text:['Together AI, Groq, Fireworks, DeepInfra, OpenRouter, Perplexity, Cerebras and fal.ai appear in the documented aggregator catalog. OpenAI-compatible endpoints allow additional providers to connect.','A compatible API shape does not guarantee identical model behavior. Check tool calling, context limits and any provider-specific restrictions for your chosen model.']},
-    {title:'Local models',text:['Ollama, LM Studio, LocalAI and vLLM are documented local options. OwnPilot supports local network discovery for compatible runtimes. Start the model service separately, then configure its reachable endpoint.','When the gateway runs in Docker, localhost refers to the container. Use a host address reachable from that container according to your Docker platform and network setup.']},
-    {title:'Routing and fallbacks',text:['Routing strategies include cheapest, fastest, smartest, balanced and fallback. Per-process model selection lets chat, channels and the pulse engine use different configured choices.','Costs, availability and model capabilities are properties of your provider. Verify them with that provider before setting unattended budgets.']},
-  ]},
-  {slug:'workflows',title:'From a request to a routine',summary:'Visual workflows, scheduled tasks, triggers, plans and proactive autonomy.',group:'Build with OwnPilot',sources:[readme],sections:[
-    {title:'Visual workflows',text:['OwnPilot includes a visual workflow builder for connecting steps and tools. Workflows can include agent execution; Claw integration lets a workflow start a dedicated autonomous runtime.','Use explicit inputs and completion conditions. Test a workflow manually before attaching a schedule or external trigger.']},
-    {title:'Triggers and heartbeats',text:['Triggers support schedules, events, conditions and webhooks. Natural-language scheduling can convert requests such as “every weekday at 9am” into cron schedules. Confirm the resulting schedule and timezone in your instance.']},
-    {title:'Goals and plans',text:['Goals can be decomposed into steps with progress tracking and next-action suggestions. Multi-step plans include checkpoints, retries and timeout handling. A clear goal makes a better boundary than an open-ended instruction to keep working.']},
-    {title:'The pulse engine',text:['The proactive pulse engine gathers context, evaluates signals and can take actions on an adaptive timer. Configurable directives and preset templates shape its behavior.','Review autonomy, tool approvals and spending limits before enabling proactive work. A scheduled agent is still using the model providers and external services you configured.']},
-  ]},
-  {slug:'channels',title:'Talk where you already are',summary:'Web chat, Telegram, WhatsApp, voice and real-time feedback.',group:'Connect',sources:[readme],sections:[
-    {title:'Your browser is the command center',text:['The web interface brings chat, agents, personal data, workflows, configuration and activity together. Streaming responses show tool execution progress; WebSocket updates reflect data changes.']},
-    {title:'Telegram',text:['OwnPilot includes a Telegram bot integration with user and chat filtering, message splitting and formatted replies. Create and configure your bot credentials in your instance and use the channel approval flow to verify access.']},
-    {title:'WhatsApp',text:['The WhatsApp integration uses Baileys and QR pairing rather than the Meta Business API. It includes session persistence, self-chat handling, group message support and voice-message transcription through the configured voice pipeline.','Review WhatsApp’s terms and the project’s channel documentation before connecting an account. This integration is not an endorsement or partnership with WhatsApp.']},
-    {title:'Voice',text:['The voice pipeline documents Whisper API transcription and OpenAI text-to-speech. Record audio in chat and play supported assistant responses. Voice services require their own credentials and may process audio externally.']},
-    {title:'Approve the right people',text:['Channel access includes approval codes, manual admin approval and blocking controls. Rotating pairing keys help verify channel ownership. Review paired users and revoke access you no longer need.']},
-  ]},
-  {slug:'personal-data',title:'A memory for your working life',summary:'Notes, tasks, goals, contacts, custom tables and persistent memory.',group:'Build with OwnPilot',sources:[readme],sections:[
-    {title:'Keep the useful context',text:['OwnPilot manages notes, tasks, bookmarks, contacts, calendar items and expenses with search, categories and tags. Pomodoro sessions, habits and a capture inbox support personal routines.']},
-    {title:'Memory beyond a conversation',text:['Persistent memories capture facts, preferences and events with importance scoring, vector search and automatic context injection. Review what is stored and avoid putting unnecessary sensitive information into any assistant.']},
-    {title:'Your own structured data',text:['Custom data tables let you define structured information beyond the built-in categories. AI-assisted schemas can help shape a tracker for a specific project. Goals connect longer-term outcomes to concrete steps.']},
-    {title:'Artifacts and versions',text:['Versioned artifacts support Markdown, code, JSON, HTML, CSV, SVG and Mermaid content. Update history and diffs let you inspect how an output changes over time.']},
-    {title:'Keep backups',text:['Application records live in PostgreSQL. Use the documented database backup and restore tools, and preserve required encryption key material separately. Test a restore before relying on your backup procedure.']},
-  ]},
-  {slug:'security',title:'Ownership, with clear boundaries',summary:'Data flow, authentication, tool approvals, isolation and deployment responsibilities.',group:'Operate',sources:[readme,{label:'Security policy',href:`${SOURCE}/SECURITY.md`},{label:'Environment settings',href:`${SOURCE}/.env.example`}],sections:[
-    {title:'Understand where your data goes',text:['Your gateway and PostgreSQL database run on infrastructure you choose. Cloud models, voice APIs, connected apps, MCP servers and web tools may receive data when used. Local inference is available, but enabled tools can still make network requests.','This website is a static product site. It does not connect to your OwnPilot instance or collect provider API keys. The theme preference is stored in your browser; no analytics or advertising scripts are included.']},
-    {title:'Authentication is a deployment decision',text:['OwnPilot supports none, API-key and JWT authentication modes. The security policy describes localhost as the default trust boundary. Set API authentication and a UI password before exposing the gateway; use HTTPS at your reverse proxy.','A configured API key without a UI password is not the same as securing every browser surface. Follow the policy’s web UI and WebSocket guidance, and review allowed origins.']},
-    {title:'Sensitive configuration and encryption',text:['The product documents AES-256-GCM cryptography and encryption of stored service configuration. OWNPILOT_ENCRYPTION_KEY can supply key material; otherwise a data-encryption key is generated in the data directory. Preserve that key with your backup plan.','ENCRYPTION_KEY is separately documented for OAuth-token encryption in production. These controls do not establish that the entire database is encrypted, and they are not end-to-end encryption for requests to external providers.']},
-    {title:'Tools, approvals and isolation',text:['Documented code-execution controls include critical-pattern checks, permissions, an approval callback and sandbox isolation. Docker and local execution have different trust boundaries. CLI tools also have allowed, prompt and blocked policies.','External skills and extensions execute code or instruct an agent. Review capabilities and sources, use narrow permissions and keep host-access opt-ins disabled unless needed. No sandbox or automated audit is a guarantee that arbitrary code is safe.']},
-    {title:'Audit and network controls',text:['The project documents hash-chain audit verification, rate limiting, PII detection/redaction and SSRF protections. Configure and review these controls for your deployment; their presence is not a claim of a third-party security certification.']},
-    {title:'Report a vulnerability',text:['Follow SECURITY.md in the product repository for the reporting procedure and scope. Do not include credentials, personal data or an exploit against someone else’s deployment in a public issue.']},
-  ]},
-  {slug:'configuration',title:'Make it your own',summary:'Environment variables, Config Center, model settings and safe defaults.',group:'Operate',sources:[readme,{label:'Environment template',href:`${SOURCE}/.env.example`}],sections:[
-    {title:'Two places, different purposes',text:['The .env file configures the server, database and deployment-related settings. Config Center manages provider API keys and service settings in PostgreSQL. Use Settings in the web interface after the server is running.']},
-    {title:'Database connection',text:['For source development against the bundled database, use 127.0.0.1 and port 25432. Inside the Compose network, the gateway uses the postgres service on port 5432. Keep a strong POSTGRES_PASSWORD in .env.'],code:'POSTGRES_HOST=127.0.0.1\nPOSTGRES_PORT=25432\nPOSTGRES_USER=ownpilot\nPOSTGRES_DB=ownpilot\n# Set POSTGRES_PASSWORD to a strong, unique value.',codeTitle:'.env · host development'},
-    {title:'Provider credentials',text:['Add credentials through Config Center rather than placing provider API keys in the database connection string or website. The product CLI also writes configuration to the same database. Restrict who can access your configuration interface.']},
-    {title:'Keys and backup continuity',text:['Keep OWNPILOT_ENCRYPTION_KEY consistent across restarts if you supply it. If you use the generated key, back up the data directory that contains it. Changing or losing encryption key material can make stored credentials unreadable.']},
-    {title:'Review the complete template',text:['Server ports, CORS origins, rate limits, MQTT, logging and security options are documented in the product’s .env.example and gateway-specific template. Read the source for the product revision you actually deploy.']},
-  ]},
-  {slug:'deployment',title:'Give OwnPilot a reliable home',summary:'Volumes, HTTPS, authentication, backups and upgrading a self-hosted instance.',group:'Operate',sources:[readme,{label:'Security policy',href:`${SOURCE}/SECURITY.md`},{label:'Docker Compose',href:`${SOURCE}/docker-compose.yml`}],sections:[
-    {title:'Start from a tested local setup',text:['Get the Docker setup working locally before placing it behind a public domain. The Compose gateway serves the UI and API on port 8080; PostgreSQL uses persistent named storage.']},
-    {title:'A public endpoint needs more configuration',text:['Terminate HTTPS at a reverse proxy, configure API authentication and a UI password, and review CORS and WebSocket behavior. Restrict direct access to your database. Set the documented production encryption configuration.','The database port is bound to loopback by the bundled Compose file. Keep optional MQTT access restricted and configure broker credentials before using edge devices.']},
-    {title:'Persistence and backups',text:['Compose defines gateway-data and postgres-data volumes. Preserve both the application data and database, including encryption key material. Follow the product’s backup/restore guidance and verify restores in an isolated setup.']},
-    {title:'Updates deserve a checkpoint',text:['Read the release notes, back up your data, and review configuration changes before updating source or rebuilding the container. Pin a tested release for reproducible operations; the website describes v0.8.3 and the documented source snapshot.']},
-    {title:'Keep this website separate',text:['This product site exports static HTML through Next.js and is deployed to GitHub Pages. It never hosts the OwnPilot API, agents or database. Deploy the assistant separately on a machine capable of running its gateway and PostgreSQL.']},
-  ]},
-  {slug:'api',title:'Build around the gateway',summary:'HTTP APIs, streamed responses, WebSocket events and MCP.',group:'Connect',sources:[readme],sections:[
-    {title:'A programmatic assistant',text:['The gateway exposes REST endpoints for conversations, agents, personal data, tools, configuration and other product features. The README’s API Reference is the authoritative entry point for paths and request shapes at your product version.']},
-    {title:'Streaming and events',text:['Server-Sent Events stream model responses and tool execution progress. WebSockets support data updates, event subscriptions and session handling. The EventBus bridge translates internal event naming into the WebSocket conventions.']},
-    {title:'Start with a health check',text:['For a local default deployment, query the gateway health endpoint. This checks service availability; it does not prove that a provider or an agent is configured.'],code:'curl http://localhost:8080/health',codeTitle:'Gateway health'},
-    {title:'Authenticate your client',text:['Configure the selected API-key or JWT mode and use its documented client flow. Keep credentials on a trusted client and apply least privilege to exposed tools. For tool-oriented integrations, consider the MCP server instead of custom HTTP plumbing.']},
-  ]},
+  {
+    slug: 'getting-started',
+    title: 'Your first flight',
+    summary: 'Install OwnPilot, connect a model, and give your assistant its first task.',
+    group: 'Start here',
+    sources: [
+      readme,
+      { label: 'Docker Compose configuration', href: `${SOURCE}/docker-compose.yml` },
+      { label: 'Environment template', href: `${SOURCE}/.env.example` },
+    ],
+    sections: [
+      {
+        title: 'A home for your AI',
+        text: [
+          'OwnPilot runs on your own infrastructure. Its gateway brings together a web interface, AI providers, tools, persistent memory and autonomous agents. PostgreSQL stores application data; models can run locally or through a cloud provider.',
+          'The Docker path below builds the product from its source. You need Git, Docker, Docker Compose, available disk space and a provider API key or a compatible local model. Building the image can take a few minutes.',
+        ],
+      },
+      {
+        title: '01 · Start with Docker',
+        text: [
+          'Clone the product repository and copy its environment template. Before running the final command, edit .env and replace POSTGRES_PASSWORD with a strong, unique password.',
+        ],
+        code: dockerCommand,
+        codeTitle: 'Docker · macOS / Linux',
+        note: 'The current Compose file reads POSTGRES_PASSWORD from the environment. Copying and editing .env is required for a predictable setup; do not rely on older “no .env needed” instructions.',
+      },
+      {
+        title: 'Using Windows PowerShell?',
+        text: [
+          'Use Copy-Item instead of cp. Docker Desktop must be running with Linux containers enabled. Set the database password in .env before starting Compose.',
+        ],
+        code: windowsCommand,
+        codeTitle: 'PowerShell',
+      },
+      {
+        title: '02 · Meet your assistant',
+        text: [
+          'Open http://localhost:8080 after the gateway and database are healthy. The production container serves the UI and API together. Go to Settings → Config Center to add your provider credentials or configure your local model endpoint.',
+          'Provider API keys are managed through Config Center or the product CLI, rather than hard-coded in this website or pasted into chat. Pick a model with tool-calling support for workflows that use tools.',
+        ],
+      },
+      {
+        title: '03 · Start small',
+        text: [
+          'Try a simple request: “Create a note called Project ideas and add three ideas for a weekend project.” Review the tool execution and confirm that the note appears in your personal data.',
+          'Then try a recurring briefing or a focused research agent. Review permissions, execution limits and budgets before allowing background work. The examples on this website illustrate workflows; they are not connected to a running OwnPilot instance.',
+        ],
+      },
+      {
+        title: 'Before you share your instance',
+        text: [
+          'Local development defaults are not a complete internet-facing deployment. Configure API authentication, set a UI password, put the gateway behind HTTPS, and read the security policy before exposing it. Keep backups of your database and encryption key material.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'installation',
+    title: 'Installation',
+    summary: 'Docker, source development, prerequisites and first-run checks.',
+    group: 'Start here',
+    sources: [readme, { label: 'Compose source', href: `${SOURCE}/docker-compose.yml` }],
+    sections: [
+      {
+        title: 'Choose your setup',
+        text: [
+          'Docker combines the built web UI and gateway in one container and runs PostgreSQL alongside it. Source development runs the Vite UI and gateway separately and is useful when contributing to OwnPilot.',
+          'The product requires Node.js 22+, pnpm 10+ and PostgreSQL 16+ for source development. These product requirements are separate from the versions used to build this website.',
+        ],
+      },
+      {
+        title: 'Docker installation',
+        text: [
+          'Copy .env.example, set POSTGRES_PASSWORD to a strong value, then build and start the postgres profile. Visit http://localhost:8080.',
+        ],
+        code: dockerCommand,
+        codeTitle: 'Docker Compose',
+      },
+      {
+        title: 'Develop from source',
+        text: [
+          'Install the product prerequisites. Start only the postgres service for source development; the gateway will run through pnpm dev. Update POSTGRES_PASSWORD in .env first.',
+        ],
+        code: sourceCommand,
+        codeTitle: 'Source development',
+      },
+      {
+        title: 'Check your services',
+        text: [
+          'The development web UI is at http://localhost:8199. The gateway is at http://localhost:8080. The Compose database is mapped to 127.0.0.1:25432 on the host. The UI development server proxies API and WebSocket requests to the gateway.',
+        ],
+        code: 'docker compose --profile postgres ps\ndocker compose --profile postgres logs --tail=100 gateway',
+        codeTitle: 'Inspect the Docker services',
+      },
+      {
+        title: 'Troubleshooting',
+        text: [
+          'If the database is unhealthy, check that .env exists and POSTGRES_PASSWORD is set. If a port is already in use, review the product’s PORT and UI_PORT settings. On Windows, use 127.0.0.1 for the host database connection to avoid IPv4/IPv6 localhost differences.',
+          'A failed model request usually needs a provider configuration or model-capability check in Config Center. Keep credentials out of public issues and redact logs before sharing them.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'architecture',
+    title: 'A system you can understand',
+    summary:
+      'Follow a request from your interface through the gateway to models, tools and storage.',
+    group: 'Understand',
+    sources: [readme],
+    sections: [
+      {
+        title: 'One gateway, several ways in',
+        text: [
+          'OwnPilot’s Hono gateway serves HTTP APIs and coordinates agent execution. The web UI uses HTTP, Server-Sent Events and WebSockets. Telegram and WhatsApp are additional channel adapters; MCP clients and servers provide another integration boundary.',
+          'The production container bundles the web UI with the gateway at port 8080. During source development, the Vite UI runs on port 8199 and proxies requests to the gateway.',
+        ],
+      },
+      {
+        title: 'The request pipeline',
+        text: [
+          'The documented message pipeline passes through audit, persistence, post-processing, context injection, agent execution and response handling. Context can include relevant persistent memories, agent instructions and tool-discovery information.',
+          'The provider router selects a configured model. The agent can discover and invoke tools as needed, subject to tool policies and approvals. Outputs and data mutations can be streamed to the interface.',
+        ],
+      },
+      {
+        title: 'Tools without an enormous prompt',
+        text: [
+          'The meta-tool proxy presents four discovery and execution entry points to the model: search_tools, get_tool_help, use_tool and batch_use_tool. The wider tool catalog remains available through dynamic discovery.',
+          'Qualified tool namespaces identify origins: core., custom., plugin., skill. and mcp. Extensions and external MCP servers expand what the assistant can do.',
+        ],
+      },
+      {
+        title: 'Persistence and events',
+        text: [
+          'PostgreSQL stores conversations, personal data, settings, goals, agent state and other application records. Persistent memories support vector search and automatic context injection.',
+          'A unified EventBus connects services. WebSocket broadcasts update the UI, while background agents, triggers and workflows coordinate longer-running activity. Optional MQTT support connects registered edge devices.',
+        ],
+      },
+      {
+        title: 'Hosting boundaries',
+        text: [
+          'OwnPilot is the application you self-host. AI inference may happen at a separate cloud API or a local model endpoint. Connected apps and tools contact their configured services. Self-hosting the gateway does not automatically make those external calls local.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'agents',
+    title: 'Meet your working crew',
+    summary: 'Chat agents, Claw runtimes, Soul identities and multi-agent crews.',
+    group: 'Build with OwnPilot',
+    sources: [readme],
+    sections: [
+      {
+        title: 'Start with a focused agent',
+        text: [
+          'Configure an agent with a system prompt, model preference, assigned tools and execution limits. Give it a narrow role and a clear completion condition. The AI Agent Creator can help turn a natural-language description into an agent configuration for review.',
+        ],
+      },
+      {
+        title: 'Claw agents: a workspace for the job',
+        text: [
+          'A Claw combines model reasoning, a dedicated file workspace, tools, CLI access, browser automation and coding-agent integrations. Four execution modes cover single tasks, continuous work, intervals and event-driven reactions.',
+          'Persistent .claw/ files — INSTRUCTIONS.md, TASKS.md, MEMORY.md and LOG.md — guide work across cycles. The management interface includes files, history, audit, output and chat views.',
+        ],
+      },
+      {
+        title: 'Soul agents: identity that persists',
+        text: [
+          'Soul agents have a configurable role, mission, personality, voice and boundaries. Scheduled heartbeats run checklists, while evolution tracking records learnings and feedback.',
+          'Crews assign different roles to multiple agents and support delegation and inter-agent messages. Prebuilt templates provide starting points for briefings, monitoring and code review.',
+        ],
+      },
+      {
+        title: 'Put boundaries around autonomy',
+        text: [
+          'Set allowed and blocked actions, approval requirements and cost limits. Start with assisted or supervised operation and inspect activity before expanding autonomy. Models and external APIs can incur usage charges.',
+          'Claw escalation asks for human input when environment changes are needed. OwnPilot’s controls help govern tool use; review each integration’s own access and permissions as well.',
+        ],
+      },
+      {
+        title: 'Coding agents',
+        text: [
+          'OwnPilot can orchestrate installed Claude Code, Codex and Gemini CLI tools. Sessions support streamed terminal output, headless or interactive execution and stored results. Install and authenticate the chosen CLI separately; OwnPilot does not provide those subscriptions or credentials.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'tools',
+    title: 'Give your AI useful hands',
+    summary: 'Built-in tools, MCP servers, extensions, skills and your own CLI tools.',
+    group: 'Build with OwnPilot',
+    sources: [readme],
+    sections: [
+      {
+        title: 'A discoverable tool catalog',
+        text: [
+          'The documented built-in catalog covers personal data, files, web access, email, code execution, Git, search, artifacts, browser automation and edge devices. The model discovers relevant tools instead of receiving every definition in each prompt.',
+        ],
+      },
+      {
+        title: 'Connect through MCP',
+        text: [
+          'OwnPilot can act as an MCP client to use tools from external servers. Filesystem, GitHub and search servers are examples; configure each server and review its permissions.',
+          'It also acts as an MCP server so compatible clients can access OwnPilot tools. Keep authentication and network access appropriate to the tools you expose.',
+        ],
+      },
+      {
+        title: 'Skills and extensions',
+        text: [
+          'Skills use the SKILL.md format for instruction-based knowledge packages. Extensions can bundle custom tools, triggers, services and configuration. The Extension SDK can call existing tools through utils.callTool().',
+          'The product includes default extensions for daily briefings, a knowledge base, project tracking, search, automation and contact enrichment. Third-party packages require their own trust and permission review.',
+        ],
+      },
+      {
+        title: 'Bring a CLI',
+        text: [
+          'OwnPilot detects supported installed CLI tools from PATH and lets you register custom binaries. Policies mark tools as allowed, prompt or blocked. Risk metadata feeds the approval flow.',
+          'Custom JavaScript tools can also be created at runtime. Read the product’s sandbox and host-access policy before enabling code that can access your environment.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'providers',
+    title: 'Your choice of intelligence',
+    summary: 'Cloud providers, aggregators, local models and routing strategies.',
+    group: 'Connect',
+    sources: [readme],
+    sections: [
+      {
+        title: 'Native providers',
+        text: [
+          'The README documents direct integrations for OpenAI, Anthropic, Google and Zhipu. Configure credentials in Settings → Config Center. Streaming, tool use and provider-specific capabilities depend on the selected model and configuration.',
+        ],
+      },
+      {
+        title: 'Aggregators and compatible endpoints',
+        text: [
+          'Together AI, Groq, Fireworks, DeepInfra, OpenRouter, Perplexity, Cerebras and fal.ai appear in the documented aggregator catalog. OpenAI-compatible endpoints allow additional providers to connect.',
+          'A compatible API shape does not guarantee identical model behavior. Check tool calling, context limits and any provider-specific restrictions for your chosen model.',
+        ],
+      },
+      {
+        title: 'Local models',
+        text: [
+          'Ollama, LM Studio, LocalAI and vLLM are documented local options. OwnPilot supports local network discovery for compatible runtimes. Start the model service separately, then configure its reachable endpoint.',
+          'When the gateway runs in Docker, localhost refers to the container. Use a host address reachable from that container according to your Docker platform and network setup.',
+        ],
+      },
+      {
+        title: 'Routing and fallbacks',
+        text: [
+          'Routing strategies include cheapest, fastest, smartest, balanced and fallback. Per-process model selection lets chat, channels and the pulse engine use different configured choices.',
+          'Costs, availability and model capabilities are properties of your provider. Verify them with that provider before setting unattended budgets.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'workflows',
+    title: 'From a request to a routine',
+    summary: 'Visual workflows, scheduled tasks, triggers, plans and proactive autonomy.',
+    group: 'Build with OwnPilot',
+    sources: [readme],
+    sections: [
+      {
+        title: 'Visual workflows',
+        text: [
+          'OwnPilot includes a visual workflow builder for connecting steps and tools. Workflows can include agent execution; Claw integration lets a workflow start a dedicated autonomous runtime.',
+          'Use explicit inputs and completion conditions. Test a workflow manually before attaching a schedule or external trigger.',
+        ],
+      },
+      {
+        title: 'Triggers and heartbeats',
+        text: [
+          'Triggers support schedules, events, conditions and webhooks. Natural-language scheduling can convert requests such as “every weekday at 9am” into cron schedules. Confirm the resulting schedule and timezone in your instance.',
+        ],
+      },
+      {
+        title: 'Goals and plans',
+        text: [
+          'Goals can be decomposed into steps with progress tracking and next-action suggestions. Multi-step plans include checkpoints, retries and timeout handling. A clear goal makes a better boundary than an open-ended instruction to keep working.',
+        ],
+      },
+      {
+        title: 'The pulse engine',
+        text: [
+          'The proactive pulse engine gathers context, evaluates signals and can take actions on an adaptive timer. Configurable directives and preset templates shape its behavior.',
+          'Review autonomy, tool approvals and spending limits before enabling proactive work. A scheduled agent is still using the model providers and external services you configured.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'channels',
+    title: 'Talk where you already are',
+    summary: 'Web chat, Telegram, WhatsApp, voice and real-time feedback.',
+    group: 'Connect',
+    sources: [readme],
+    sections: [
+      {
+        title: 'Your browser is the command center',
+        text: [
+          'The web interface brings chat, agents, personal data, workflows, configuration and activity together. Streaming responses show tool execution progress; WebSocket updates reflect data changes.',
+        ],
+      },
+      {
+        title: 'Telegram',
+        text: [
+          'OwnPilot includes a Telegram bot integration with user and chat filtering, message splitting and formatted replies. Create and configure your bot credentials in your instance and use the channel approval flow to verify access.',
+        ],
+      },
+      {
+        title: 'WhatsApp',
+        text: [
+          'The WhatsApp integration uses Baileys and QR pairing rather than the Meta Business API. It includes session persistence, self-chat handling, group message support and voice-message transcription through the configured voice pipeline.',
+          'Review WhatsApp’s terms and the project’s channel documentation before connecting an account. This integration is not an endorsement or partnership with WhatsApp.',
+        ],
+      },
+      {
+        title: 'Voice',
+        text: [
+          'The voice pipeline documents Whisper API transcription and OpenAI text-to-speech. Record audio in chat and play supported assistant responses. Voice services require their own credentials and may process audio externally.',
+        ],
+      },
+      {
+        title: 'Approve the right people',
+        text: [
+          'Channel access includes approval codes, manual admin approval and blocking controls. Rotating pairing keys help verify channel ownership. Review paired users and revoke access you no longer need.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'personal-data',
+    title: 'A memory for your working life',
+    summary: 'Notes, tasks, goals, contacts, custom tables and persistent memory.',
+    group: 'Build with OwnPilot',
+    sources: [readme],
+    sections: [
+      {
+        title: 'Keep the useful context',
+        text: [
+          'OwnPilot manages notes, tasks, bookmarks, contacts, calendar items and expenses with search, categories and tags. Pomodoro sessions, habits and a capture inbox support personal routines.',
+        ],
+      },
+      {
+        title: 'Memory beyond a conversation',
+        text: [
+          'Persistent memories capture facts, preferences and events with importance scoring, vector search and automatic context injection. Review what is stored and avoid putting unnecessary sensitive information into any assistant.',
+        ],
+      },
+      {
+        title: 'Your own structured data',
+        text: [
+          'Custom data tables let you define structured information beyond the built-in categories. AI-assisted schemas can help shape a tracker for a specific project. Goals connect longer-term outcomes to concrete steps.',
+        ],
+      },
+      {
+        title: 'Artifacts and versions',
+        text: [
+          'Versioned artifacts support Markdown, code, JSON, HTML, CSV, SVG and Mermaid content. Update history and diffs let you inspect how an output changes over time.',
+        ],
+      },
+      {
+        title: 'Keep backups',
+        text: [
+          'Application records live in PostgreSQL. Use the documented database backup and restore tools, and preserve required encryption key material separately. Test a restore before relying on your backup procedure.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'security',
+    title: 'Ownership, with clear boundaries',
+    summary:
+      'Data flow, authentication, tool approvals, isolation and deployment responsibilities.',
+    group: 'Operate',
+    sources: [
+      readme,
+      { label: 'Security policy', href: `${SOURCE}/SECURITY.md` },
+      { label: 'Environment settings', href: `${SOURCE}/.env.example` },
+    ],
+    sections: [
+      {
+        title: 'Understand where your data goes',
+        text: [
+          'Your gateway and PostgreSQL database run on infrastructure you choose. Cloud models, voice APIs, connected apps, MCP servers and web tools may receive data when used. Local inference is available, but enabled tools can still make network requests.',
+          'This website is a static product site. It does not connect to your OwnPilot instance or collect provider API keys. The theme preference is stored in your browser; no analytics or advertising scripts are included.',
+        ],
+      },
+      {
+        title: 'Authentication is a deployment decision',
+        text: [
+          'OwnPilot supports none, API-key and JWT authentication modes. The security policy describes localhost as the default trust boundary. Set API authentication and a UI password before exposing the gateway; use HTTPS at your reverse proxy.',
+          'A configured API key without a UI password is not the same as securing every browser surface. Follow the policy’s web UI and WebSocket guidance, and review allowed origins.',
+        ],
+      },
+      {
+        title: 'Sensitive configuration and encryption',
+        text: [
+          'The product documents AES-256-GCM cryptography and encryption of stored service configuration. OWNPILOT_ENCRYPTION_KEY can supply key material; otherwise a data-encryption key is generated in the data directory. Preserve that key with your backup plan.',
+          'ENCRYPTION_KEY is separately documented for OAuth-token encryption in production. These controls do not establish that the entire database is encrypted, and they are not end-to-end encryption for requests to external providers.',
+        ],
+      },
+      {
+        title: 'Tools, approvals and isolation',
+        text: [
+          'Documented code-execution controls include critical-pattern checks, permissions, an approval callback and sandbox isolation. Docker and local execution have different trust boundaries. CLI tools also have allowed, prompt and blocked policies.',
+          'External skills and extensions execute code or instruct an agent. Review capabilities and sources, use narrow permissions and keep host-access opt-ins disabled unless needed. No sandbox or automated audit is a guarantee that arbitrary code is safe.',
+        ],
+      },
+      {
+        title: 'Audit and network controls',
+        text: [
+          'The project documents hash-chain audit verification, rate limiting, PII detection/redaction and SSRF protections. Configure and review these controls for your deployment; their presence is not a claim of a third-party security certification.',
+        ],
+      },
+      {
+        title: 'Report a vulnerability',
+        text: [
+          'Follow SECURITY.md in the product repository for the reporting procedure and scope. Do not include credentials, personal data or an exploit against someone else’s deployment in a public issue.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'configuration',
+    title: 'Make it your own',
+    summary: 'Environment variables, Config Center, model settings and safe defaults.',
+    group: 'Operate',
+    sources: [readme, { label: 'Environment template', href: `${SOURCE}/.env.example` }],
+    sections: [
+      {
+        title: 'Two places, different purposes',
+        text: [
+          'The .env file configures the server, database and deployment-related settings. Config Center manages provider API keys and service settings in PostgreSQL. Use Settings in the web interface after the server is running.',
+        ],
+      },
+      {
+        title: 'Database connection',
+        text: [
+          'For source development against the bundled database, use 127.0.0.1 and port 25432. Inside the Compose network, the gateway uses the postgres service on port 5432. Keep a strong POSTGRES_PASSWORD in .env.',
+        ],
+        code: 'POSTGRES_HOST=127.0.0.1\nPOSTGRES_PORT=25432\nPOSTGRES_USER=ownpilot\nPOSTGRES_DB=ownpilot\n# Set POSTGRES_PASSWORD to a strong, unique value.',
+        codeTitle: '.env · host development',
+      },
+      {
+        title: 'Provider credentials',
+        text: [
+          'Add credentials through Config Center rather than placing provider API keys in the database connection string or website. The product CLI also writes configuration to the same database. Restrict who can access your configuration interface.',
+        ],
+      },
+      {
+        title: 'Keys and backup continuity',
+        text: [
+          'Keep OWNPILOT_ENCRYPTION_KEY consistent across restarts if you supply it. If you use the generated key, back up the data directory that contains it. Changing or losing encryption key material can make stored credentials unreadable.',
+        ],
+      },
+      {
+        title: 'Review the complete template',
+        text: [
+          'Server ports, CORS origins, rate limits, MQTT, logging and security options are documented in the product’s .env.example and gateway-specific template. Read the source for the product revision you actually deploy.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'deployment',
+    title: 'Give OwnPilot a reliable home',
+    summary: 'Volumes, HTTPS, authentication, backups and upgrading a self-hosted instance.',
+    group: 'Operate',
+    sources: [
+      readme,
+      { label: 'Security policy', href: `${SOURCE}/SECURITY.md` },
+      { label: 'Docker Compose', href: `${SOURCE}/docker-compose.yml` },
+    ],
+    sections: [
+      {
+        title: 'Start from a tested local setup',
+        text: [
+          'Get the Docker setup working locally before placing it behind a public domain. The Compose gateway serves the UI and API on port 8080; PostgreSQL uses persistent named storage.',
+        ],
+      },
+      {
+        title: 'A public endpoint needs more configuration',
+        text: [
+          'Terminate HTTPS at a reverse proxy, configure API authentication and a UI password, and review CORS and WebSocket behavior. Restrict direct access to your database. Set the documented production encryption configuration.',
+          'The database port is bound to loopback by the bundled Compose file. Keep optional MQTT access restricted and configure broker credentials before using edge devices.',
+        ],
+      },
+      {
+        title: 'Persistence and backups',
+        text: [
+          'Compose defines gateway-data and postgres-data volumes. Preserve both the application data and database, including encryption key material. Follow the product’s backup/restore guidance and verify restores in an isolated setup.',
+        ],
+      },
+      {
+        title: 'Updates deserve a checkpoint',
+        text: [
+          'Read the release notes, back up your data, and review configuration changes before updating source or rebuilding the container. Pin a tested release for reproducible operations; the website describes v0.8.3 and the documented source snapshot.',
+        ],
+      },
+      {
+        title: 'Keep this website separate',
+        text: [
+          'This product site exports static HTML through Next.js and is deployed to GitHub Pages. It never hosts the OwnPilot API, agents or database. Deploy the assistant separately on a machine capable of running its gateway and PostgreSQL.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'api',
+    title: 'Build around the gateway',
+    summary: 'HTTP APIs, streamed responses, WebSocket events and MCP.',
+    group: 'Connect',
+    sources: [readme],
+    sections: [
+      {
+        title: 'A programmatic assistant',
+        text: [
+          'The gateway exposes REST endpoints for conversations, agents, personal data, tools, configuration and other product features. The README’s API Reference is the authoritative entry point for paths and request shapes at your product version.',
+        ],
+      },
+      {
+        title: 'Streaming and events',
+        text: [
+          'Server-Sent Events stream model responses and tool execution progress. WebSockets support data updates, event subscriptions and session handling. The EventBus bridge translates internal event naming into the WebSocket conventions.',
+        ],
+      },
+      {
+        title: 'Start with a health check',
+        text: [
+          'For a local default deployment, query the gateway health endpoint. This checks service availability; it does not prove that a provider or an agent is configured.',
+        ],
+        code: 'curl http://localhost:8080/health',
+        codeTitle: 'Gateway health',
+      },
+      {
+        title: 'Authenticate your client',
+        text: [
+          'Configure the selected API-key or JWT mode and use its documented client flow. Keep credentials on a trusted client and apply least privilege to exposed tools. For tool-oriented integrations, consider the MCP server instead of custom HTTP plumbing.',
+        ],
+      },
+    ],
+  },
 ];
-export const docs: Record<string, Doc> = Object.fromEntries(definitions.map(doc => [doc.slug, doc]));
-export const docGroups = ['Start here','Understand','Build with OwnPilot','Connect','Operate'];
+export const docs: Record<string, Doc> = Object.fromEntries(
+  definitions.map((doc) => [doc.slug, doc]),
+);
+export const docGroups = ['Start here', 'Understand', 'Build with OwnPilot', 'Connect', 'Operate'];
 export const integrations = [
-  {name:'OpenAI',detail:'Native provider',category:'Models',mark:'◎'},
-  {name:'Anthropic',detail:'Native provider',category:'Models',mark:'AⅠ'},
-  {name:'Google Gemini',detail:'Native provider',category:'Models',mark:'✦'},
-  {name:'Zhipu',detail:'Native provider',category:'Models',mark:'Z'},
-  {name:'Ollama',detail:'Local model runtime',category:'Local AI',mark:'◉'},
-  {name:'LM Studio',detail:'Local model runtime',category:'Local AI',mark:'LM'},
-  {name:'LocalAI',detail:'Local model runtime',category:'Local AI',mark:'L'},
-  {name:'vLLM',detail:'Compatible local endpoint',category:'Local AI',mark:'V'},
-  {name:'OpenRouter',detail:'Model aggregator',category:'Models',mark:'↗'},
-  {name:'Groq',detail:'Model aggregator',category:'Models',mark:'g'},
-  {name:'Together AI',detail:'Model aggregator',category:'Models',mark:'t.'},
-  {name:'Fireworks',detail:'Model aggregator',category:'Models',mark:'✳'},
-  {name:'DeepInfra',detail:'Model aggregator',category:'Models',mark:'D'},
-  {name:'Perplexity',detail:'Model aggregator',category:'Models',mark:'⌘'},
-  {name:'Cerebras',detail:'Model aggregator',category:'Models',mark:'C'},
-  {name:'fal.ai',detail:'Model aggregator',category:'Models',mark:'fal'},
-  {name:'Telegram',detail:'Bot channel',category:'Channels',mark:'➤'},
-  {name:'WhatsApp',detail:'Baileys · QR pairing',category:'Channels',mark:'◷'},
-  {name:'MCP',detail:'Client & server',category:'Tools & apps',mark:'⌁'},
-  {name:'Composio',detail:'OAuth app connections',category:'Tools & apps',mark:'C'},
-  {name:'Claude Code',detail:'Installed coding CLI',category:'Tools & apps',mark:'✳'},
-  {name:'Codex',detail:'Installed coding CLI',category:'Tools & apps',mark:'>_'},
-  {name:'Gemini CLI',detail:'Installed coding CLI',category:'Tools & apps',mark:'✧'},
-  {name:'MQTT',detail:'IoT & edge devices',category:'Tools & apps',mark:'≋'},
+  { name: 'OpenAI', detail: 'Native provider', category: 'Models', mark: '◎' },
+  { name: 'Anthropic', detail: 'Native provider', category: 'Models', mark: 'AⅠ' },
+  { name: 'Google Gemini', detail: 'Native provider', category: 'Models', mark: '✦' },
+  { name: 'Zhipu', detail: 'Native provider', category: 'Models', mark: 'Z' },
+  { name: 'Ollama', detail: 'Local model runtime', category: 'Local AI', mark: '◉' },
+  { name: 'LM Studio', detail: 'Local model runtime', category: 'Local AI', mark: 'LM' },
+  { name: 'LocalAI', detail: 'Local model runtime', category: 'Local AI', mark: 'L' },
+  { name: 'vLLM', detail: 'Compatible local endpoint', category: 'Local AI', mark: 'V' },
+  { name: 'OpenRouter', detail: 'Model aggregator', category: 'Models', mark: '↗' },
+  { name: 'Groq', detail: 'Model aggregator', category: 'Models', mark: 'g' },
+  { name: 'Together AI', detail: 'Model aggregator', category: 'Models', mark: 't.' },
+  { name: 'Fireworks', detail: 'Model aggregator', category: 'Models', mark: '✳' },
+  { name: 'DeepInfra', detail: 'Model aggregator', category: 'Models', mark: 'D' },
+  { name: 'Perplexity', detail: 'Model aggregator', category: 'Models', mark: '⌘' },
+  { name: 'Cerebras', detail: 'Model aggregator', category: 'Models', mark: 'C' },
+  { name: 'fal.ai', detail: 'Model aggregator', category: 'Models', mark: 'fal' },
+  { name: 'Telegram', detail: 'Bot channel', category: 'Channels', mark: '➤' },
+  { name: 'WhatsApp', detail: 'Baileys · QR pairing', category: 'Channels', mark: '◷' },
+  { name: 'MCP', detail: 'Client & server', category: 'Tools & apps', mark: '⌁' },
+  { name: 'Composio', detail: 'OAuth app connections', category: 'Tools & apps', mark: 'C' },
+  { name: 'Claude Code', detail: 'Installed coding CLI', category: 'Tools & apps', mark: '✳' },
+  { name: 'Codex', detail: 'Installed coding CLI', category: 'Tools & apps', mark: '>_' },
+  { name: 'Gemini CLI', detail: 'Installed coding CLI', category: 'Tools & apps', mark: '✧' },
+  { name: 'MQTT', detail: 'IoT & edge devices', category: 'Tools & apps', mark: '≋' },
 ];

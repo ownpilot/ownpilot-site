@@ -18,6 +18,7 @@ Open `http://127.0.0.1:3000`. All font files are bundled locally. The site requi
 
 ```sh
 npm run typecheck
+npm run format:check
 npm run build
 npm run check:export
 npx playwright install chromium
@@ -64,7 +65,7 @@ Vector sources and generated PNGs live under `public/`. Run `npm run assets` to 
 
 ## Versions verified on 2026-10-18
 
-Node.js 26.12.0; npm 12.2.0; Next.js 16.4.2; React 19.3.1; TypeScript 7.0.2; lucide-react 1.59.0; Fontsource Inter and JetBrains Mono 5.3.0; Sharp 0.35.5; Playwright 1.64.1; axe-core Playwright 4.14.0. Dependency versions are exact, with `package-lock.json`. Product version: v0.8.3, distinct from the website stack.
+Node.js 26.12.0; npm 12.2.0; Next.js 16.4.2; React 19.3.1; TypeScript 7.0.2; lucide-react 1.59.0; Fontsource Inter and JetBrains Mono 5.3.0; Sharp 0.35.5; Playwright 1.64.1; axe-core Playwright 4.14.0; Prettier 3.9.10. Dependency versions are exact, with `package-lock.json`. Product version: v0.8.3, distinct from the website stack.
 
 ## License
 
