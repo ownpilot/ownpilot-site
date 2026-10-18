@@ -15,8 +15,6 @@ const NS = 'http://www.w3.org/2000/svg';
 const colors = ['field-blue', 'field-green', 'field-teal'];
 const interactive =
   'a, button, input, select, textarea, label, summary, header, nav, dialog, [role="dialog"], [role="button"], [role="tab"], [contenteditable]';
-const protectedContent =
-  'main h1, main h2, main h3, main h4, main p, main pre, main table, main article, main button, main a, main input, main summary, main strong, main .eyebrow, main .tiny-label, .hero-trust, .provider-strip, .hero-system, .product-window, .studio-card, .footer-brand, .footer-column, .footer-bottom, .docs-sidebar';
 
 function element<K extends keyof SVGElementTagNameMap>(
   tag: K,
@@ -44,7 +42,8 @@ export function createSiteScene(
     linkLayer = group('links'),
     pulseLayer = group('pulses'),
     trailLayer = group('trails'),
-    shields = group('shields');
+    echoLayer = group('echoes'),
+    pointerView = group('pointer');
   const routeLayer = group('routes');
   const routeElements = [...routeLayer.querySelectorAll('path')];
   const media = matchMedia('(prefers-reduced-motion: reduce)');
@@ -56,8 +55,7 @@ export function createSiteScene(
     entrance = 0;
   let paused = false,
     visible = true,
-    destroyed = false,
-    layoutDirty = true;
+    destroyed = false;
   let sceneScroll = scrollY,
     energy = 0.55,
     lastInteraction = -100,
@@ -66,8 +64,13 @@ export function createSiteScene(
   let pointerInside = false;
   const pointer = { x: -1000, y: -1000, strength: 0 };
   let press: { x: number; y: number; id: number; at: number } | null = null;
-  let targets: Element[] = [];
-  let nodes: { model: FieldNode; originY: number; view: SVGGElement }[] = [];
+  let nodes: {
+    model: FieldNode;
+    originY: number;
+    view: SVGGElement;
+    echo: SVGGElement;
+    ray: SVGPathElement;
+  }[] = [];
   const pulses: FieldPulse[] = [],
     trails: FieldTrail[] = [];
   const links = Array.from({ length: C.maxLinks }, () => {
@@ -96,63 +99,6 @@ export function createSiteScene(
     trailLayer.append(view);
     return view;
   });
-  const maskViews: SVGGElement[] = [];
-
-  function refreshTargets() {
-    targets = [...document.querySelectorAll(protectedContent)];
-    layoutDirty = true;
-  }
-  function measureShields() {
-    layoutDirty = false;
-    const boxes = targets
-      .map((el) => el.getBoundingClientRect())
-      .filter(
-        (r) =>
-          r.width > 0 &&
-          r.height > 0 &&
-          r.bottom > 0 &&
-          r.top < height &&
-          r.right > 0 &&
-          r.left < width,
-      )
-      .sort((a, b) => b.width * b.height - a.width * a.height);
-    const kept: DOMRect[] = [];
-    for (const box of boxes) {
-      if (
-        kept.some(
-          (b) =>
-            box.left >= b.left &&
-            box.right <= b.right &&
-            box.top >= b.top &&
-            box.bottom <= b.bottom,
-        )
-      )
-        continue;
-      kept.push(box);
-      if (kept.length === 96) break;
-    }
-    kept.forEach((box, i) => {
-      if (!maskViews[i]) {
-        const view = element('g');
-        for (const opacity of [0.25, 0.5, 0.97])
-          view.append(element('rect', { fill: 'black', opacity, rx: 12 }));
-        shields.append(view);
-        maskViews.push(view);
-      }
-      const view = maskViews[i];
-      view.style.display = '';
-      [...view.children].forEach((rect, j) => {
-        const pad = [18, 8, 0][j];
-        set(rect, 'x', box.left - pad);
-        set(rect, 'y', box.top - pad);
-        set(rect, 'width', box.width + pad * 2);
-        set(rect, 'height', box.height + pad * 2);
-      });
-    });
-    maskViews.slice(kept.length).forEach((v) => {
-      v.style.display = 'none';
-    });
-  }
   function resize() {
     if (destroyed) return;
     const bounds = layer.getBoundingClientRect();
@@ -160,6 +106,7 @@ export function createSiteScene(
     height = Math.max(1, bounds.height);
     write(svg, 'viewBox', `0 0 ${width} ${height}`);
     nodeLayer.replaceChildren();
+    echoLayer.replaceChildren();
     nodes = createFieldNodes(width, height).map((model, i) => {
       const view = element('g', { class: `field-node field-color ${colors[model.kind]}` });
       const size = 2.5 + model.depth * 2;
@@ -177,7 +124,12 @@ export function createSiteScene(
       if (i % 5 === 0)
         view.append(element('path', { d: 'M-9 0h4M5 0h4M0-9v4M0 5v4', opacity: 0.6 }));
       nodeLayer.append(view);
-      return { model, originY: model.homeY, view };
+      const echo = view.cloneNode(true) as SVGGElement;
+      write(echo, 'class', `field-echo field-color ${colors[model.kind]}`);
+      write(echo, 'opacity', '0');
+      const ray = element('path', { class: `field-color ${colors[model.kind]}`, opacity: 0 });
+      echoLayer.append(ray, echo);
+      return { model, originY: model.homeY, view, echo, ray };
     });
     sceneScroll = media.matches ? 0 : scrollY;
     // Keep initial node positions aligned with the visitor's current scroll.
@@ -197,7 +149,6 @@ export function createSiteScene(
     trails.length = 0;
     pointer.strength = 0;
     pointerInside = false;
-    layoutDirty = true;
     if (!frame) paint(0, media.matches || paused);
   }
   const wrap = (y: number) =>
@@ -206,7 +157,6 @@ export function createSiteScene(
     Math.max(0, Math.min(1, x / 50, (width - x) / 50, y / 60, (height - y) / 60));
 
   function paint(dt: number, still = false) {
-    if (layoutDirty) measureShields();
     const fade = still ? 1 : Math.min(1, entrance / C.entranceTime);
     const opacity = String(Math.round(fade * 100) / 100);
     if (svg.style.opacity !== opacity) svg.style.opacity = opacity;
@@ -220,6 +170,8 @@ export function createSiteScene(
       const alpha = edge(n.x, n.y) * (0.25 + n.depth * 0.5);
       if (alpha <= 0.001) {
         if (node.view.style.display !== 'none') node.view.style.display = 'none';
+        write(node.echo, 'opacity', '0');
+        write(node.ray, 'opacity', '0');
         continue;
       }
       if (node.view.style.display) node.view.style.display = '';
@@ -230,6 +182,30 @@ export function createSiteScene(
         `translate(${n.x.toFixed(1)} ${n.y.toFixed(1)}) rotate(${(((n.phase + (still ? 0 : motionTime * 0.035)) * 180) / Math.PI).toFixed(1)})`,
       );
       set(node.view, 'opacity', alpha);
+      const distance = Math.hypot(n.x - pointer.x, n.y - pointer.y);
+      const proximity = Math.max(0, 1 - distance / C.pointerRadius) ** 2 * pointer.strength;
+      let impact = 0;
+      if (!still)
+        for (const pulse of pulses) {
+          const age = time - pulse.born;
+          const radius = Math.hypot(n.x - pulse.x, n.y - pulse.y);
+          impact = Math.max(
+            impact,
+            Math.exp(-(((radius - pulseRadius(age)) / 50) ** 2)) *
+              Math.max(0, 1 - age / C.pulseLife) *
+              Math.max(0, 1 - radius / C.pulseRadius),
+          );
+        }
+      const response = still ? 0 : Math.max(proximity, impact);
+      set(node.echo, 'opacity', response * alpha * 0.9);
+      set(node.ray, 'opacity', still ? 0 : proximity * alpha * 0.28);
+      if (response > 0.005) write(node.echo, 'transform', node.view.getAttribute('transform')!);
+      if (!still && proximity > 0.005)
+        write(
+          node.ray,
+          'd',
+          `M${pointer.x.toFixed(1)} ${pointer.y.toFixed(1)}Q${((pointer.x + n.x) / 2 + 18).toFixed(1)} ${((pointer.y + n.y) / 2 - 18).toFixed(1)} ${n.x.toFixed(1)} ${n.y.toFixed(1)}`,
+        );
     }
     let used = 0;
     const linkRadius = width <= C.mobileBreakpoint ? 125 : C.linkRadius;
@@ -261,6 +237,9 @@ export function createSiteScene(
       }
     }
     links.slice(used).forEach((path) => write(path, 'opacity', '0'));
+    set(pointerView, 'opacity', still ? 0 : pointer.strength);
+    if (!still && pointer.strength > 0.005)
+      write(pointerView, 'transform', `translate(${pointer.x.toFixed(1)} ${pointer.y.toFixed(1)})`);
     trailViews.forEach((view, i) => {
       const trail = trails[i];
       if (!trail) {
@@ -270,8 +249,8 @@ export function createSiteScene(
       const life = Math.max(0, 1 - (time - trail.born) / C.trailLife);
       set(view, 'cx', trail.x);
       set(view, 'cy', trail.y);
-      set(view, 'r', 3 + (1 - life) * 14);
-      set(view, 'opacity', life * 0.25);
+      set(view, 'r', 5 + (1 - life) * 26);
+      set(view, 'opacity', life ** 1.5 * 0.45);
     });
     pulseViews.forEach(({ view, rings, sparks }, i) => {
       const pulse = pulses[i];
@@ -322,7 +301,8 @@ export function createSiteScene(
     time += dt;
     motionTime += dt * energy;
     entrance += dt;
-    pointer.strength += ((pointerInside ? 1 : 0) - pointer.strength) * (1 - Math.exp(-dt * 6));
+    pointer.strength +=
+      ((pointerInside && active ? 1 : 0) - pointer.strength) * (1 - Math.exp(-dt * 6));
     sceneScroll += (scrollY - sceneScroll) * (1 - Math.exp(-dt * 7));
     pruneFieldEffects(pulses, time, C.pulseLife);
     pruneFieldEffects(trails, time, C.trailLife);
@@ -414,11 +394,10 @@ export function createSiteScene(
     lastInteraction = performance.now() / 1000;
   };
   const scroll = () => {
-    layoutDirty = true;
-    leave();
-    if (!frame) {
-      paint(0, true);
-    }
+    // Only cancel a tap during a swipe. Client coordinates stay in the fixed viewport.
+    press = null;
+    if (pointerInside) lastInteraction = performance.now() / 1000;
+    if (!frame) paint(0, true);
   };
   const preference = () => {
     onPreference(media.matches);
@@ -428,20 +407,6 @@ export function createSiteScene(
     leave();
     sync();
   };
-  const content = new MutationObserver((records) => {
-    if (
-      records.some(
-        (record) =>
-          !(record.target instanceof Element) ||
-          (!record.target.closest('.site-background') &&
-            !record.target.closest('.site-motion-control')),
-      )
-    ) {
-      refreshTargets();
-      if (!frame) paint(0, true);
-    }
-  });
-  content.observe(document.body, { childList: true, characterData: true, subtree: true });
   const observer = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
     sync();
@@ -449,29 +414,18 @@ export function createSiteScene(
   observer.observe(layer);
   const dimensions = new ResizeObserver(resize);
   dimensions.observe(layer);
-  const contentSize = new ResizeObserver(() => {
-    layoutDirty = true;
-    if (!frame) paint(0, true);
-  });
-  contentSize.observe(document.body);
-  document.addEventListener('pointermove', move, { passive: true });
-  document.addEventListener('pointerdown', down, { passive: true });
-  document.addEventListener('pointerup', up, { passive: true });
+  document.addEventListener('pointermove', move, { passive: true, capture: true });
+  document.addEventListener('pointerdown', down, { passive: true, capture: true });
+  document.addEventListener('pointerup', up, { passive: true, capture: true });
   document.addEventListener('pointercancel', leave, { passive: true });
   document.documentElement.addEventListener('pointerleave', leave, { passive: true });
   window.addEventListener('scroll', scroll, { passive: true });
   window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('blur', leave);
   document.addEventListener('visibilitychange', visibility);
   media.addEventListener('change', preference);
-  refreshTargets();
   resize();
   preference();
-  void document.fonts.ready.then(() => {
-    if (!destroyed) {
-      refreshTargets();
-      if (!frame) paint(0, true);
-    }
-  });
   return {
     setPaused(value) {
       paused = value;
@@ -482,22 +436,21 @@ export function createSiteScene(
       cancelAnimationFrame(frame);
       observer.disconnect();
       dimensions.disconnect();
-      contentSize.disconnect();
-      content.disconnect();
       media.removeEventListener('change', preference);
       window.removeEventListener('scroll', scroll);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('blur', leave);
       document.removeEventListener('visibilitychange', visibility);
-      document.removeEventListener('pointermove', move);
-      document.removeEventListener('pointerdown', down);
-      document.removeEventListener('pointerup', up);
+      document.removeEventListener('pointermove', move, true);
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('pointerup', up, true);
       document.removeEventListener('pointercancel', leave);
       document.documentElement.removeEventListener('pointerleave', leave);
       nodeLayer.replaceChildren();
       linkLayer.replaceChildren();
       pulseLayer.replaceChildren();
       trailLayer.replaceChildren();
-      shields.replaceChildren();
+      echoLayer.replaceChildren();
     },
   };
 }

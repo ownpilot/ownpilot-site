@@ -46,20 +46,13 @@ export function SiteBackground() {
           focusable="false"
         >
           <defs>
-            <mask
-              id={`content-${id}`}
-              maskUnits="userSpaceOnUse"
-              x="0"
-              y="0"
-              width="100%"
-              height="100%"
-              style={{ maskType: 'luminance' }}
-            >
-              <rect width="100%" height="100%" fill="white" />
-              <g data-shields="" />
-            </mask>
+            <radialGradient id={`light-${id}`}>
+              <stop offset="0" stopColor="currentColor" stopOpacity="0.11" />
+              <stop offset="0.4" stopColor="currentColor" stopOpacity="0.05" />
+              <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+            </radialGradient>
           </defs>
-          <g mask={`url(#content-${id})`} fill="none" stroke="currentColor" strokeWidth="1">
+          <g data-ambient="" opacity="0.38" fill="none" stroke="currentColor" strokeWidth="1">
             <g data-routes="" opacity="0.13">
               <path d="M-50 180C280 80 700 300 1050 150" />
               <path d="M-50 540C300 690 640 350 1050 510" />
@@ -67,6 +60,14 @@ export function SiteBackground() {
             </g>
             <g data-links="" />
             <g data-nodes="" />
+          </g>
+          <g data-interaction="" fill="none" stroke="currentColor" strokeWidth="1.2">
+            <g data-pointer="" className="field-teal" opacity="0">
+              <circle r="230" fill={`url(#light-${id})`} stroke="none" />
+              <circle r="32" opacity="0.2" />
+              <path d="M-44 0h10M34 0h10M0-44v10M0 34v10" opacity="0.3" />
+            </g>
+            <g data-echoes="" />
             <g data-trails="" />
             <g data-pulses="" />
           </g>

@@ -53,11 +53,87 @@ test('one SVG spans sections and routes, preserves controls, and keeps its pause
   await expect(field).toHaveCount(1);
   await expect(field).toHaveAttribute('data-state', 'paused');
   await expect(page.locator('.field-node').first()).toHaveAttribute('transform', transform!);
-  await expect
-    .poll(() => page.locator('[data-shields]').evaluate((el) => el.childElementCount))
-    .toBeGreaterThan(0);
+  await expect(page.locator('[data-interaction]')).toHaveCount(1);
   await page.getByRole('button', { name: 'Resume motion', exact: true }).click();
   await expect(field).toHaveAttribute('data-state', 'running');
+});
+
+test('interaction crosses text, opaque cards and section boundaries without masks or scroll offset', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-10-18T12:00:00Z') });
+  await page.goto('/');
+  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'running');
+  await page.clock.pauseAt(new Date('2026-10-18T12:01:00Z'));
+  await page.clock.runFor(1800);
+  const pointer = page.locator('[data-pointer]');
+  for (const theme of ['Dark', 'Light']) {
+    await page.getByRole('button', { name: 'Choose color theme' }).click();
+    await page.getByRole('radio', { name: theme, exact: true }).check();
+    for (const selector of ['h1', '.hero-system', '#features h2', '.product-window']) {
+      const target = page.locator(selector).first();
+      await target.scrollIntoViewIfNeeded();
+      await page.clock.runFor(100);
+      const box = (await target.boundingBox())!;
+      const x = Math.round(box.x + box.width / 2);
+      const y = Math.round(Math.max(100, Math.min(600, box.y + box.height / 2)));
+      await page.mouse.move(x, y);
+      await page.clock.runFor(500);
+      await expect(pointer).toHaveAttribute(
+        'transform',
+        `translate(${x.toFixed(1)} ${y.toFixed(1)})`,
+      );
+      expect(Number(await pointer.getAttribute('opacity'))).toBeGreaterThan(0.9);
+      expect(
+        await page
+          .locator('.field-echo')
+          .evaluateAll((nodes) => nodes.some((n) => Number(n.getAttribute('opacity')) > 0.01)),
+      ).toBe(true);
+      // A wheel changes document coordinates while the physical cursor stays still.
+      await page.mouse.wheel(0, 240);
+      await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+      await page.clock.runFor(450);
+      expect(Number(await pointer.getAttribute('opacity'))).toBeGreaterThan(0.9);
+      await expect(pointer).toHaveAttribute(
+        'transform',
+        `translate(${x.toFixed(1)} ${y.toFixed(1)})`,
+      );
+    }
+  }
+  expect(
+    await page
+      .locator('[data-pulses], [data-trails], [data-echoes], [data-pointer]')
+      .evaluateAll((layers) =>
+        layers.every((layer) => {
+          for (let el: Element | null = layer; el && el !== document.body; el = el.parentElement) {
+            const css = getComputedStyle(el);
+            if (
+              el.hasAttribute('mask') ||
+              css.maskImage !== 'none' ||
+              css.clipPath !== 'none' ||
+              css.pointerEvents !== 'none'
+            )
+              return false;
+          }
+          return true;
+        }),
+      ),
+  ).toBe(true);
+  expect(
+    await page
+      .locator('.site-background')
+      .evaluate(
+        (el) => el.parentElement === document.body && getComputedStyle(el).position === 'fixed',
+      ),
+  ).toBe(true);
+  await page.mouse.click(18, 210);
+  await page.clock.runFor(120);
+  await expect(page.locator('.field-pulse[data-active="true"]').first()).toHaveAttribute(
+    'transform',
+    'translate(18 210)',
+  );
+  await page.clock.runFor(7500);
+  expect(Number(await pointer.getAttribute('opacity'))).toBeLessThan(0.01);
 });
 
 test('background waves are visible, capped, expire, and ignore product controls', async ({

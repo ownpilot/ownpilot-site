@@ -10,16 +10,17 @@ export const AMBIENT_FIELD = {
   parallax: 0.08,
   mobileNodes: 22,
   mobileBreakpoint: 650,
-  pointerRadius: 180,
-  pointerForce: 38,
+  pointerRadius: 280,
+  pointerForce: 105,
   linkRadius: 185,
   driftSpeed: 0.18,
   driftDistance: 15,
-  pulseLife: 1.65,
-  pulseRadius: 210,
+  pulseLife: 1.8,
+  pulseRadius: 300,
+  pulseForce: 85,
   maxPulses: 6,
   mobilePulses: 3,
-  trailLife: 0.7,
+  trailLife: 0.9,
   maxTrails: 16,
   idleAfter: 5,
   entranceTime: 1.4,
@@ -113,13 +114,20 @@ export function stepFieldNode(
   const dy = node.y - pointer.y;
   const distance = Math.hypot(dx, dy);
   if (distance < AMBIENT_FIELD.pointerRadius && pointer.strength > 0) {
-    const force =
-      (1 - distance / AMBIENT_FIELD.pointerRadius) ** 2 *
-      AMBIENT_FIELD.pointerForce *
-      pointer.strength *
-      node.depth;
+    const falloff = (1 - distance / AMBIENT_FIELD.pointerRadius) ** 2;
+    const force = falloff * AMBIENT_FIELD.pointerForce * pointer.strength * node.depth;
     targetX += (dx / Math.max(1, distance)) * force;
     targetY += (dy / Math.max(1, distance)) * force;
+    // A tangential current and gentle outer pull make the field feel fluid.
+    const orbit = falloff * 34 * pointer.strength * node.depth;
+    const pull =
+      Math.sin((distance / AMBIENT_FIELD.pointerRadius) * Math.PI) ** 2 *
+      (distance / AMBIENT_FIELD.pointerRadius) *
+      28 *
+      pointer.strength *
+      node.depth;
+    targetX += (-dy / Math.max(1, distance)) * orbit - (dx / Math.max(1, distance)) * pull;
+    targetY += (dx / Math.max(1, distance)) * orbit - (dy / Math.max(1, distance)) * pull;
   }
   for (const pulse of pulses) {
     const age = time - pulse.born;
@@ -128,8 +136,13 @@ export function stepFieldNode(
     const py = node.homeY - pulse.y;
     const distance = Math.hypot(px, py);
     if (distance > AMBIENT_FIELD.pulseRadius) continue;
-    const wave = Math.exp(-(((distance - pulseRadius(age)) / 30) ** 2));
-    const force = wave * 30 * (1 - age / AMBIENT_FIELD.pulseLife) * node.depth;
+    const wave = Math.exp(-(((distance - pulseRadius(age)) / 45) ** 2));
+    const force =
+      wave *
+      AMBIENT_FIELD.pulseForce *
+      (1 - age / AMBIENT_FIELD.pulseLife) *
+      (1 - distance / AMBIENT_FIELD.pulseRadius) ** 2 *
+      node.depth;
     targetX += (px / Math.max(1, distance)) * force;
     targetY += (py / Math.max(1, distance)) * force;
   }

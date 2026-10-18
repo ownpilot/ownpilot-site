@@ -625,18 +625,15 @@
   .site-background {
     position: fixed;
     inset: 0;
-    z-index: 3;
+    /* A body-level overlay clears section backgrounds and local stacking contexts. */
+    z-index: 5;
     pointer-events: none;
     overflow: hidden;
-    opacity: 0.75;
+    opacity: 0.85;
     color: var(--blue);
-    mask-image:
-      linear-gradient(to bottom, transparent, black 8%, black 92%, transparent),
-      linear-gradient(to right, transparent, black 2%, black 98%, transparent);
-    mask-composite: intersect;
   }
   :root[data-color='light'] .site-background {
-    opacity: 0.62;
+    opacity: 0.72;
   }
   .site-field {
     display: block;

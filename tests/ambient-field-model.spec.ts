@@ -75,3 +75,29 @@ test('motion remains consistent at 60 and 120Hz and clamps a suspended frame', (
   stepFieldNode(at60, 4, 600, pointer, []);
   expect(Math.hypot(at60.x - before.x, at60.y - before.y)).toBeLessThan(1);
 });
+
+test('nearby objects visibly deflect while distant objects remain undisturbed', () => {
+  const base = { homeX: 400, homeY: 400, x: 400, y: 400, depth: 1, phase: 0, kind: 0 };
+  const resting = { ...base };
+  const reacting = { ...base };
+  const distant = { ...base };
+  for (let i = 1; i <= 120; i++) {
+    stepFieldNode(resting, i / 60, 1 / 60, { x: 0, y: 0, strength: 0 }, [], 0);
+    stepFieldNode(reacting, i / 60, 1 / 60, { x: 360, y: 400, strength: 1 }, [], 0);
+    stepFieldNode(distant, i / 60, 1 / 60, { x: -200, y: 400, strength: 1 }, [], 0);
+  }
+  expect(Math.hypot(reacting.x - resting.x, reacting.y - resting.y)).toBeGreaterThan(28);
+  expect(distant).toEqual(resting);
+  const beyond = { ...base };
+  const control = { ...base };
+  stepFieldNode(
+    beyond,
+    0,
+    1 / 60,
+    { x: 400 - AMBIENT_FIELD.pointerRadius - 1, y: 400, strength: 1 },
+    [],
+    0,
+  );
+  stepFieldNode(control, 0, 1 / 60, { x: 0, y: 0, strength: 0 }, [], 0);
+  expect(beyond).toEqual(control);
+});
