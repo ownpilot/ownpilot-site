@@ -208,7 +208,7 @@ export function createSiteScene(
   function paint(dt: number, still = false) {
     if (layoutDirty) measureShields();
     const fade = still ? 1 : Math.min(1, entrance / C.entranceTime);
-    const opacity = fade.toFixed(2);
+    const opacity = String(Math.round(fade * 100) / 100);
     if (svg.style.opacity !== opacity) svg.style.opacity = opacity;
     const visibleNodes: typeof nodes = [];
     for (const node of nodes) {

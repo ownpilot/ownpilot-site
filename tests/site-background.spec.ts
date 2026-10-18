@@ -1,5 +1,34 @@
 import { test, expect } from '@playwright/test';
 
+test('inactive effect slots stop generating DOM mutations', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-10-18T12:00:00Z') });
+  await page.goto('/');
+  const field = page.locator('.site-field');
+  await expect(field).toHaveAttribute('data-state', 'running');
+  await page.clock.pauseAt(new Date('2026-10-18T12:01:00Z'));
+  await page.clock.runFor(2000);
+  const mutations = field.evaluate(
+    (svg) =>
+      new Promise<number>((resolve) => {
+        let count = 0;
+        const observer = new MutationObserver((records) => {
+          count += records.filter(
+            (record) =>
+              record.target instanceof Element &&
+              record.target.matches('.field-pulse[data-active="false"], .field-trail'),
+          ).length;
+        });
+        observer.observe(svg, { attributes: true, subtree: true });
+        setTimeout(() => {
+          observer.disconnect();
+          resolve(count);
+        }, 500);
+      }),
+  );
+  await page.clock.runFor(600);
+  expect(await mutations).toBe(0);
+});
+
 test('one SVG spans sections and routes, preserves controls, and keeps its pause preference', async ({
   page,
 }) => {
