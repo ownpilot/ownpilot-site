@@ -32,6 +32,7 @@ export function HeroBackground() {
   const [paused, setPaused] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [ready, setReady] = useState(false);
+  const motionLabel = reduced ? 'Reduced motion' : paused ? 'Resume motion' : 'Pause motion';
 
   useEffect(() => {
     const surface = canvas.current;
@@ -56,19 +57,14 @@ export function HeroBackground() {
         <button
           className="hero-motion-control"
           type="button"
-          aria-label={
-            reduced
-              ? 'Background motion reduced by device preference'
-              : paused
-                ? 'Play background animation'
-                : 'Pause background animation'
-          }
+          aria-label={motionLabel}
+          title={reduced ? 'Background motion follows your device preference' : undefined}
           aria-pressed={paused || reduced}
           disabled={reduced}
           onClick={() => setPaused((value) => !value)}
         >
           {paused && !reduced ? <Play size={11} /> : <Pause size={11} />}
-          {reduced ? 'Reduced motion' : paused ? 'Motion paused' : 'Pause motion'}
+          {motionLabel}
         </button>
       )}
     </>

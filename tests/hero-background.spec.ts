@@ -8,7 +8,7 @@ test('full-width canvas paints, pauses, resumes, and preserves product controls'
   await expect(canvas).toHaveAttribute('data-state', 'running');
   const bounds = await canvas.boundingBox();
   expect(bounds?.width).toBe(await page.evaluate(() => document.documentElement.clientWidth));
-  await page.getByRole('button', { name: 'Pause background animation' }).click();
+  await page.getByRole('button', { name: 'Pause motion' }).click();
   await expect(canvas).toHaveAttribute('data-state', 'paused');
   const painted = await canvas.evaluate((element: HTMLCanvasElement) => {
     const pixels = element.getContext('2d')!.getImageData(0, 0, element.width, element.height).data;
@@ -19,7 +19,7 @@ test('full-width canvas paints, pauses, resumes, and preserves product controls'
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await expect(page.getByRole('img', { name: /Turn a topic/ })).toBeVisible();
   expect(await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL())).toBe(image);
-  await page.getByRole('button', { name: 'Play background animation' }).click();
+  await page.getByRole('button', { name: 'Resume motion' }).click();
   await expect(canvas).toHaveAttribute('data-state', 'running');
   await page.getByRole('link', { name: 'Make it yours', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/getting-started\/$/);
@@ -53,9 +53,7 @@ test('reduced motion stays static through interaction and theme changes', async 
   await page.goto('/');
   const canvas = page.locator('.hero-field');
   await expect(canvas).toHaveAttribute('data-state', 'reduced');
-  await expect(
-    page.getByRole('button', { name: 'Background motion reduced by device preference' }),
-  ).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Reduced motion' })).toBeDisabled();
   const image = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
   await page.mouse.move(30, 130);
   await page.mouse.click(30, 130);
@@ -102,7 +100,7 @@ test('canvas-unavailable fallback preserves content and usable links', async ({ 
   });
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pause background animation' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pause motion' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Make it yours', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/getting-started\/$/);
 });
