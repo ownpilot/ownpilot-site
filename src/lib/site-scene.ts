@@ -26,8 +26,12 @@ function element<K extends keyof SVGElementTagNameMap>(
   for (const [name, value] of Object.entries(attributes)) node.setAttribute(name, String(value));
   return node;
 }
+function write(node: Element, name: string, value: string) {
+  // Unchanged SVG attributes still generate DOM mutation events in browsers.
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
+}
 function set(node: Element, name: string, value: number) {
-  node.setAttribute(name, value.toFixed(2));
+  write(node, name, value.toFixed(2));
 }
 
 export function createSiteScene(
@@ -154,7 +158,7 @@ export function createSiteScene(
     const bounds = layer.getBoundingClientRect();
     width = Math.max(1, bounds.width);
     height = Math.max(1, bounds.height);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    write(svg, 'viewBox', `0 0 ${width} ${height}`);
     nodeLayer.replaceChildren();
     nodes = createFieldNodes(width, height).map((model, i) => {
       const view = element('g', { class: `field-node field-color ${colors[model.kind]}` });
@@ -183,7 +187,8 @@ export function createSiteScene(
     }
     routeElements.forEach((path, i) => {
       const y = height * (0.18 + i * 0.32);
-      path.setAttribute(
+      write(
+        path,
         'd',
         `M-40 ${y}C${width * 0.3} ${y - height * 0.14} ${width * 0.68} ${y + height * 0.17} ${width + 40} ${y - 30}`,
       );
@@ -203,7 +208,8 @@ export function createSiteScene(
   function paint(dt: number, still = false) {
     if (layoutDirty) measureShields();
     const fade = still ? 1 : Math.min(1, entrance / C.entranceTime);
-    svg.style.opacity = String(fade);
+    const opacity = fade.toFixed(2);
+    if (svg.style.opacity !== opacity) svg.style.opacity = opacity;
     const visibleNodes: typeof nodes = [];
     for (const node of nodes) {
       const n = node.model;
@@ -213,14 +219,15 @@ export function createSiteScene(
       if (!still) stepFieldNode(n, time, dt, pointer, pulses, motionTime);
       const alpha = edge(n.x, n.y) * (0.25 + n.depth * 0.5);
       if (alpha <= 0.001) {
-        node.view.style.display = 'none';
+        if (node.view.style.display !== 'none') node.view.style.display = 'none';
         continue;
       }
-      node.view.style.display = '';
+      if (node.view.style.display) node.view.style.display = '';
       visibleNodes.push(node);
-      node.view.setAttribute(
+      write(
+        node.view,
         'transform',
-        `translate(${n.x.toFixed(2)} ${n.y.toFixed(2)}) rotate(${(((n.phase + (still ? 0 : motionTime * 0.035)) * 180) / Math.PI).toFixed(2)})`,
+        `translate(${n.x.toFixed(1)} ${n.y.toFixed(1)}) rotate(${(((n.phase + (still ? 0 : motionTime * 0.035)) * 180) / Math.PI).toFixed(1)})`,
       );
       set(node.view, 'opacity', alpha);
     }
@@ -241,7 +248,8 @@ export function createSiteScene(
         if (distance >= linkRadius) continue;
         const path = links[used++];
         count++;
-        path.setAttribute(
+        write(
+          path,
           'd',
           `M${n.x.toFixed(1)} ${n.y.toFixed(1)}Q${((n.x + other.x) / 2).toFixed(1)} ${(n.y - 12).toFixed(1)} ${other.x.toFixed(1)} ${other.y.toFixed(1)}`,
         );
@@ -252,11 +260,11 @@ export function createSiteScene(
         );
       }
     }
-    links.slice(used).forEach((path) => path.setAttribute('opacity', '0'));
+    links.slice(used).forEach((path) => write(path, 'opacity', '0'));
     trailViews.forEach((view, i) => {
       const trail = trails[i];
       if (!trail) {
-        view.setAttribute('opacity', '0');
+        write(view, 'opacity', '0');
         return;
       }
       const life = Math.max(0, 1 - (time - trail.born) / C.trailLife);
@@ -268,16 +276,16 @@ export function createSiteScene(
     pulseViews.forEach(({ view, rings, sparks }, i) => {
       const pulse = pulses[i];
       if (!pulse) {
-        view.setAttribute('opacity', '0');
-        view.dataset.active = 'false';
+        write(view, 'opacity', '0');
+        write(view, 'data-active', 'false');
         return;
       }
       const age = time - pulse.born,
         life = Math.max(0, 1 - age / C.pulseLife),
         radius = pulseRadius(age);
-      view.dataset.active = 'true';
-      view.setAttribute('class', `field-pulse field-color ${colors[pulse.variant]}`);
-      view.setAttribute('transform', `translate(${pulse.x} ${pulse.y})`);
+      write(view, 'data-active', 'true');
+      write(view, 'class', `field-pulse field-color ${colors[pulse.variant]}`);
+      write(view, 'transform', `translate(${pulse.x} ${pulse.y})`);
       set(view, 'opacity', Math.sin(Math.min(1, age / 0.1) * Math.PI * 0.5) * life ** 1.5 * 0.8);
       set(rings[0], 'r', radius);
       set(rings[1], 'r', radius * (pulse.variant === 1 ? 0.72 : 0.9));
@@ -285,13 +293,15 @@ export function createSiteScene(
         const angle = (j / 8) * Math.PI * 2 + (pulse.variant * Math.PI) / 8;
         const x = Math.cos(angle) * radius,
           y = Math.sin(angle) * radius;
-        spark.setAttribute(
+        write(
+          spark,
           'd',
           `M${x.toFixed(1)} ${y.toFixed(1)}l${(Math.cos(angle) * (4 + life * 9)).toFixed(1)} ${(Math.sin(angle) * (4 + life * 9)).toFixed(1)}`,
         );
       });
     });
-    routeLayer.setAttribute(
+    write(
+      routeLayer,
       'transform',
       `translate(0 ${(Math.sin(sceneScroll * 0.00035) * height * 0.05).toFixed(1)})`,
     );
@@ -299,9 +309,14 @@ export function createSiteScene(
   function tick(now: number) {
     frame = 0;
     if (destroyed) return;
+    const active = now / 1000 - lastInteraction < C.idleAfter;
+    const fps = width <= C.mobileBreakpoint ? C.mobileFps : active ? C.activeFps : C.idleFps;
+    if (previous && now - previous < 1000 / fps - 0.5) {
+      frame = requestAnimationFrame(tick);
+      return;
+    }
     const dt = previous ? Math.min(0.05, (now - previous) / 1000) : 0;
     previous = now;
-    const active = now / 1000 - lastInteraction < C.idleAfter;
     energy += ((active ? 1 : 0.55) - energy) * (1 - Math.exp(-dt * 2));
     // Effects expire in real seconds; only ambient drift becomes quieter when idle.
     time += dt;
