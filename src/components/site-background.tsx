@@ -2,23 +2,43 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Pause, Play } from 'lucide-react';
-import { createSiteScene, type SiteScene } from '@/lib/site-scene';
+import { MousePointer2 } from 'lucide-react';
+import { createSiteScene } from '@/lib/site-scene';
+
+const STORAGE_KEY = 'ownpilot-background-motion';
+const readChoice = (value: string | null) =>
+  value === 'on' ? true : value === 'off' ? false : null;
 
 /** One decorative viewport follows the visitor across all routes and sections. */
 export function SiteBackground() {
   const id = useId().replaceAll(':', '');
   const surface = useRef<SVGSVGElement>(null);
-  const scene = useRef<SiteScene | null>(null);
-  const [paused, setPaused] = useState(false);
+  const choice = useRef<boolean | null>(null);
+  const [enabled, setEnabled] = useState(false);
   const [reduced, setReduced] = useState(false);
   const [ready, setReady] = useState(false);
   const [controlHost, setControlHost] = useState<HTMLElement | null>(null);
-  const label = reduced ? 'Reduced motion' : paused ? 'Resume motion' : 'Pause motion';
+  const label = enabled ? 'Animasyonları kapat' : 'Animasyonları aç';
 
   useEffect(() => {
-    if (!surface.current) return;
-    scene.current = createSiteScene(surface.current, setReduced);
+    const media = matchMedia('(prefers-reduced-motion: reduce)');
+    try {
+      choice.current = readChoice(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      /* Use the device default when storage is unavailable. */
+    }
+    const sync = () => {
+      setReduced(media.matches);
+      setEnabled(choice.current ?? !media.matches);
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY && event.key !== null) return;
+      choice.current = readChoice(event.key === null ? null : event.newValue);
+      sync();
+    };
+    sync();
+    media.addEventListener('change', sync);
+    window.addEventListener('storage', storage);
     const bindControl = () => {
       const slot = document.getElementById('background-motion-slot');
       if (slot?.dataset.ready === 'true') setControlHost(slot);
@@ -29,15 +49,34 @@ export function SiteBackground() {
     setReady(true);
     return () => {
       window.removeEventListener('ownpilot:motion-control-ready', bindControl);
-      scene.current?.destroy();
-      scene.current = null;
+      window.removeEventListener('storage', storage);
+      media.removeEventListener('change', sync);
     };
   }, []);
-  useEffect(() => scene.current?.setPaused(paused), [paused]);
+  useEffect(() => {
+    if (!ready || !enabled || !surface.current) return;
+    const scene = createSiteScene(surface.current);
+    return () => scene.destroy();
+  }, [enabled, ready]);
+  useEffect(() => {
+    if (ready && !enabled && surface.current)
+      surface.current.dataset.state = reduced && choice.current === null ? 'reduced' : 'off';
+  }, [enabled, ready, reduced]);
+
+  function toggle() {
+    const next = !enabled;
+    choice.current = next;
+    setEnabled(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next ? 'on' : 'off');
+    } catch {
+      /* The control still works for this visit. */
+    }
+  }
 
   return (
     <>
-      <div className="site-background" aria-hidden="true">
+      <div className="site-background" aria-hidden="true" data-enabled={ready && enabled}>
         <svg
           ref={surface}
           className="site-field"
@@ -81,12 +120,11 @@ export function SiteBackground() {
             type="button"
             className="site-motion-control"
             aria-label={label}
-            aria-pressed={paused || reduced}
-            disabled={reduced}
-            title={reduced ? 'Background motion follows your device preference' : label}
-            onClick={() => setPaused((value) => !value)}
+            aria-pressed={enabled}
+            title={label}
+            onClick={toggle}
           >
-            {paused && !reduced ? <Play size={14} /> : <Pause size={14} />}
+            <MousePointer2 size={17} aria-hidden="true" />
           </button>,
           controlHost,
         )}

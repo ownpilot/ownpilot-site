@@ -14,7 +14,7 @@ import {
   type FieldRelay,
 } from './ambient-field';
 
-export type SiteScene = { setPaused: (paused: boolean) => void; destroy: () => void };
+export type SiteScene = { destroy: () => void };
 const NS = 'http://www.w3.org/2000/svg';
 const colors = ['field-blue', 'field-green', 'field-teal'];
 const interactive =
@@ -36,10 +36,7 @@ function set(node: Element, name: string, value: number) {
   write(node, name, value.toFixed(2));
 }
 
-export function createSiteScene(
-  svg: SVGSVGElement,
-  onPreference: (value: boolean) => void,
-): SiteScene {
+export function createSiteScene(svg: SVGSVGElement): SiteScene {
   const layer = svg.parentElement!;
   const group = (name: string) => svg.querySelector<SVGGElement>(`[data-${name}]`)!;
   const nodeLayer = group('nodes'),
@@ -51,15 +48,13 @@ export function createSiteScene(
     pointerView = group('pointer');
   const routeLayer = group('routes');
   const routeElements = [...routeLayer.querySelectorAll('path')];
-  const media = matchMedia('(prefers-reduced-motion: reduce)');
   let width = 1,
     height = 1,
     frame = 0,
     previous = 0,
     time = 0,
     entrance = 0;
-  let paused = false,
-    visible = true,
+  let visible = true,
     destroyed = false;
   let sceneScroll = scrollY,
     energy = 0.55,
@@ -149,7 +144,7 @@ export function createSiteScene(
       echoLayer.append(ray, echo);
       return { model, originY: model.homeY, view, echo, ray };
     });
-    sceneScroll = media.matches ? 0 : scrollY;
+    sceneScroll = scrollY;
     // Keep initial node positions aligned with the visitor's current scroll.
     for (const node of nodes) {
       node.model.homeY = wrap(node.originY - sceneScroll * node.model.depth * C.parallax);
@@ -168,7 +163,7 @@ export function createSiteScene(
     relays.length = 0;
     pointer.strength = 0;
     pointerInside = false;
-    if (!frame) paint(0, media.matches || paused);
+    if (!frame) paint(0);
   }
   const wrap = (y: number) =>
     ((((y + 60) % (height + 120)) + (height + 120)) % (height + 120)) - 60;
@@ -372,15 +367,7 @@ export function createSiteScene(
     cancelAnimationFrame(frame);
     frame = 0;
     previous = 0;
-    const state = media.matches
-      ? 'reduced'
-      : paused
-        ? 'paused'
-        : document.hidden
-          ? 'hidden'
-          : !visible
-            ? 'offscreen'
-            : 'running';
+    const state = document.hidden ? 'hidden' : !visible ? 'offscreen' : 'running';
     svg.dataset.state = state;
     if (state === 'running') frame = requestAnimationFrame(tick);
     else {
@@ -389,11 +376,10 @@ export function createSiteScene(
       relays.length = 0;
       pointer.strength = 0;
       pointerInside = false;
-      if (media.matches) sceneScroll = 0;
       paint(0, true);
     }
   }
-  const blocked = () => paused || media.matches || document.hidden || !visible;
+  const blocked = () => destroyed || document.hidden || !visible;
   const move = (event: PointerEvent) => {
     if (
       press &&
@@ -469,10 +455,6 @@ export function createSiteScene(
     if (pointerInside) lastInteraction = performance.now() / 1000;
     if (!frame) paint(0, true);
   };
-  const preference = () => {
-    onPreference(media.matches);
-    sync();
-  };
   const visibility = () => {
     leave();
     sync();
@@ -493,20 +475,14 @@ export function createSiteScene(
   window.addEventListener('resize', resize, { passive: true });
   window.addEventListener('blur', leave);
   document.addEventListener('visibilitychange', visibility);
-  media.addEventListener('change', preference);
   resize();
-  preference();
+  sync();
   return {
-    setPaused(value) {
-      paused = value;
-      sync();
-    },
     destroy() {
       destroyed = true;
       cancelAnimationFrame(frame);
       observer.disconnect();
       dimensions.disconnect();
-      media.removeEventListener('change', preference);
       window.removeEventListener('scroll', scroll);
       window.removeEventListener('resize', resize);
       window.removeEventListener('blur', leave);
@@ -516,6 +492,12 @@ export function createSiteScene(
       document.removeEventListener('pointerup', up, true);
       document.removeEventListener('pointercancel', leave);
       document.documentElement.removeEventListener('pointerleave', leave);
+      pulses.length = 0;
+      trails.length = 0;
+      relays.length = 0;
+      nodes.length = 0;
+      press = null;
+      write(pointerView, 'opacity', '0');
       nodeLayer.replaceChildren();
       linkLayer.replaceChildren();
       pulseLayer.replaceChildren();

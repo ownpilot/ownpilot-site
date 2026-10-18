@@ -208,7 +208,6 @@ export function Navigation() {
             ))}
           </nav>
           <div className="header-actions">
-            <span id="background-motion-slot" className="background-motion-slot" />
             <button
               className="search-trigger icon-button"
               aria-label="Search documentation"
@@ -218,6 +217,7 @@ export function Navigation() {
               <kbd>⌘ K</kbd>
             </button>
             <ThemePicker />
+            <span id="background-motion-slot" className="background-motion-slot" />
             <span className="header-divider" />
             <a className="header-github" href={REPO} target="_blank" rel="noreferrer">
               <Github size={18} />

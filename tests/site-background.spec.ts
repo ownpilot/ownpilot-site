@@ -33,7 +33,7 @@ test('inactive effect slots stop generating DOM mutations', async ({ page }) => 
   expect(await mutations).toBe(0);
 });
 
-test('one SVG spans sections and routes, preserves controls, and keeps its pause preference', async ({
+test('one SVG spans sections and routes, preserves controls, and keeps its off preference', async ({
   page,
 }) => {
   await page.goto('/');
@@ -47,16 +47,16 @@ test('one SVG spans sections and routes, preserves controls, and keeps its pause
   await page.locator('.studio-card').scrollIntoViewIfNeeded();
   await expect(field).toHaveAttribute('data-state', 'running');
   expect((await field.boundingBox())?.y).toBe(0);
-  await page.getByRole('button', { name: 'Pause motion', exact: true }).click();
-  await expect(field).toHaveAttribute('data-state', 'paused');
-  const transform = await page.locator('.field-node').first().getAttribute('transform');
+  await page.getByRole('button', { name: 'Animasyonları kapat', exact: true }).click();
+  await expect(field).toHaveAttribute('data-state', 'off');
+  await expect(page.locator('.field-node')).toHaveCount(0);
   await page.getByRole('link', { name: 'Integrations', exact: true }).first().click();
   await expect(page).toHaveURL(/\/integrations\/$/);
   await expect(field).toHaveCount(1);
-  await expect(field).toHaveAttribute('data-state', 'paused');
-  await expect(page.locator('.field-node').first()).toHaveAttribute('transform', transform!);
+  await expect(field).toHaveAttribute('data-state', 'off');
+  await expect(page.locator('.field-node')).toHaveCount(0);
   await expect(page.locator('[data-interaction]')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Resume motion', exact: true }).click();
+  await page.getByRole('button', { name: 'Animasyonları aç', exact: true }).click();
   await expect(field).toHaveAttribute('data-state', 'running');
 });
 
@@ -239,26 +239,18 @@ test('reduced motion remains still while themes and page content remain usable',
   await page.goto('/');
   const field = page.locator('.site-field');
   await expect(field).toHaveAttribute('data-state', 'reduced');
-  await expect(page.getByRole('button', { name: 'Reduced motion', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Animasyonları aç', exact: true })).toBeEnabled();
   await page.evaluate(() => document.fonts.ready);
-  const transform = await page.locator('.field-node').first().getAttribute('transform');
-  const color = await page
-    .locator('.field-blue')
-    .first()
-    .evaluate((el) => getComputedStyle(el).color);
+  await expect(page.locator('.field-node')).toHaveCount(0);
+  const color = await page.locator('.site-background').evaluate((el) => getComputedStyle(el).color);
   await page.mouse.click(18, 210);
   await expect(page.locator('.field-pulse[data-active="true"]')).toHaveCount(0);
   await page.getByRole('button', { name: 'Choose color theme' }).click();
   await page.getByRole('radio', { name: 'Light', exact: true }).check();
   await expect
-    .poll(() =>
-      page
-        .locator('.field-blue')
-        .first()
-        .evaluate((el) => getComputedStyle(el).color),
-    )
+    .poll(() => page.locator('.site-background').evaluate((el) => getComputedStyle(el).color))
     .not.toBe(color);
-  await expect(page.locator('.field-node').first()).toHaveAttribute('transform', transform!);
+  await expect(page.locator('.field-node')).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(field).toHaveAttribute('data-state', 'running');
 });
@@ -285,6 +277,10 @@ test('mobile taps are bounded and a real touch swipe still scrolls the page', as
     .toBeGreaterThan(0);
   expect(await page.locator('.field-pulse[data-active="true"]').count()).toBeLessThanOrEqual(3);
   expect(await page.locator('.field-relay[data-active="true"]').count()).toBeLessThanOrEqual(9);
+  await page.getByRole('button', { name: 'Animasyonları kapat', exact: true }).tap();
+  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'off');
+  await page.getByRole('button', { name: 'Animasyonları aç', exact: true }).tap();
+  await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'running');
   const client = await context.newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
@@ -311,7 +307,7 @@ test('without JavaScript the SVG stays decorative and navigation remains usable'
   await page.goto('/');
   await expect(page.locator('.site-field')).toHaveCount(1);
   await expect(page.locator('.site-background')).toHaveAttribute('aria-hidden', 'true');
-  await expect(page.getByRole('button', { name: 'Pause motion' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Animasyonları kapat' })).toHaveCount(0);
   await page.getByRole('link', { name: 'Make it yours', exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/getting-started\/$/);
   await expect(page.locator('h1')).toBeVisible();

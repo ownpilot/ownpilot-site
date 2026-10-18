@@ -635,6 +635,9 @@
   :root[data-color='light'] .site-background {
     opacity: 0.72;
   }
+  .site-background[data-enabled='false'] {
+    visibility: hidden;
+  }
   .site-field {
     display: block;
     width: 100%;
@@ -662,15 +665,15 @@
   .background-motion-slot {
     display: inline-flex;
     flex-shrink: 0;
-    width: 28px;
-    height: 30px;
+    width: 38px;
+    height: 38px;
   }
   .site-motion-control {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 30px;
+    width: 38px;
+    height: 38px;
     padding: 0;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -681,8 +684,12 @@
   .site-motion-control:hover {
     color: var(--text);
   }
-  .site-motion-control:disabled {
-    cursor: default;
+  .site-motion-control[aria-pressed='true'] {
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 8%, var(--bg-subtle));
+  }
+  .site-motion-control[aria-pressed='false'] svg {
+    opacity: 0.45;
   }
   .hero-stage {
     position: relative;
@@ -2470,6 +2477,11 @@
     }
   }
   @media (max-width: 650px) {
+    .background-motion-slot,
+    .site-motion-control {
+      width: 44px;
+      height: 44px;
+    }
     .studio-card {
       grid-template-columns: minmax(0, 1fr);
       gap: 24px;
@@ -5028,6 +5040,14 @@
     }
     .not-found > p {
       font-size: 13px;
+    }
+  }
+  @media (max-width: 359px) {
+    .site-header .brand > span {
+      display: none;
+    }
+    .header-inner {
+      gap: 8px;
     }
   }
   @media (prefers-reduced-motion: reduce) {
