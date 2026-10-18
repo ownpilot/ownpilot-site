@@ -19,7 +19,7 @@ test('inactive effect slots stop generating DOM mutations', async ({ page }) => 
           ).length;
         });
         observer.observe(svg, { attributes: true, subtree: true });
-      svg.setAttribute('data-idle-observing', 'true');
+        svg.setAttribute('data-idle-observing', 'true');
         setTimeout(() => {
           observer.disconnect();
           resolve(count);
