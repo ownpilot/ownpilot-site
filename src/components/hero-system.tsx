@@ -103,7 +103,7 @@ export function HeroSystem() {
           <span>YOUR GATEWAY</span>
         </div>
         <div className="orbit-node node-agent">
-          <span className="node-icon violet">
+          <span className="node-icon teal">
             <Fingerprint size={20} />
           </span>
           <span>
@@ -113,7 +113,7 @@ export function HeroSystem() {
           <span className="node-light" />
         </div>
         <div className="orbit-node node-model">
-          <span className="node-icon orange">
+          <span className="node-icon blue">
             <Sparkles size={20} />
           </span>
           <span>

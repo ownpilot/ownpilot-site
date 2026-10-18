@@ -39,7 +39,7 @@ Reviewed 2026-10-18 for the standalone OwnPilot site.
 
 All accessible references were fetched directly. CobaltDB, DockRouter, UWAS, NothingDNS and GuardianWAF were additionally inspected in the browser. CobaltDB's appearance menu was opened: native radio choices Light/Dark/System, miniature preview cards, selected check, supporting copy. Geometry and animation were inspected in the delivered Oxog source/CSS.
 
-The design uses Inter and JetBrains Mono, warm orange for actions, a deep neutral surface, a carefully matched light theme and the original blue/green product mark. The orange is a website accent; it does not recolor the product logo.
+The design uses Inter and JetBrains Mono with a blue/green palette derived from the original product mark. Dark mode uses deep navy surfaces and brighter blue, green and teal accents; light mode uses ice-blue surfaces, navy text and deeper accents for readable contrast. The shared OKLCH tokens drive buttons, diagrams, focus rings, code, theme previews and product illustrations. The brand page documents compass blue (#2585B2), signal green (#43B27D), deep navy (#102F49) and ice blue (#E4F0F5). OXOGNET retains its separate original pink/purple logo colors.
 
 ## Official implementation references
 

@@ -51,6 +51,7 @@ For an optional `www` subdomain, point its CNAME to `ownpilot.github.io`. Consul
 
 - App Router server-rendered static pages, small client components for navigation, themes, search, filters, code copy and illustrative walkthroughs.
 - Central layout tokens in `src/app/globals.css`; 1728px maximum content width, fluid gutters, readable article measure, explicit tablet/mobile layouts.
+- Blue/green brand palette with shared OKLCH theme tokens: navy surfaces in dark mode, ice-blue surfaces and navy text in light mode, accessible blue/green/teal accents, and coordinated focus rings, diagrams, code panels and app icons.
 - Dark, light and system themes; a pre-paint script prevents theme flash, localStorage persists the selection, native radios support keyboard selection, OS changes update system mode.
 - Original vector-based flow diagrams; the compass SVG follows the product's existing raster identity. The original raster is also preserved for download.
 - The OXOGNET mark retains the exact geometry, proportions and staggered stroke-draw timing observed on CobaltDB. Reduced-motion mode displays it fully drawn.

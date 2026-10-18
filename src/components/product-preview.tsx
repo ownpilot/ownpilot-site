@@ -29,9 +29,9 @@ const panels = [
     title: 'A small crew. A clear mission.',
     subtitle: 'Give every agent a purpose, a workspace, and boundaries.',
     agents: [
-      ['Morning briefer', 'A calmer start to your day.', 'Scheduled', 'violet'],
-      ['Research assistant', 'Follow the sources. Find the signal.', 'Ready', 'orange'],
-      ['Code reviewer', 'A fresh pair of eyes on your work.', 'Ready', 'blue'],
+      ['Morning briefer', 'A calmer start to your day.', 'Scheduled', 'blue'],
+      ['Research assistant', 'Follow the sources. Find the signal.', 'Ready', 'teal'],
+      ['Code reviewer', 'A fresh pair of eyes on your work.', 'Ready', 'green'],
     ],
   },
   {
@@ -40,9 +40,9 @@ const panels = [
     title: 'Good context goes a long way.',
     subtitle: 'Keep the facts, preferences, and goals that matter.',
     agents: [
-      ['Preferences', 'I prefer concise, source-backed summaries.', 'Preference', 'violet'],
-      ['Project context', 'OwnPilot website · launch checklist', 'Project', 'orange'],
-      ['Weekly focus', 'Ship the documentation improvements.', 'Goal', 'blue'],
+      ['Preferences', 'I prefer concise, source-backed summaries.', 'Preference', 'blue'],
+      ['Project context', 'OwnPilot website · launch checklist', 'Project', 'teal'],
+      ['Weekly focus', 'Ship the documentation improvements.', 'Goal', 'green'],
     ],
   },
   {
@@ -51,9 +51,9 @@ const panels = [
     title: 'Make the repeatable, automatic.',
     subtitle: 'Connect a trigger, the right tools, and a useful outcome.',
     agents: [
-      ['Weekday briefing', 'Schedule → calendar → summary', 'Scheduled', 'violet'],
-      ['Research pipeline', 'Topic → sources → saved artifact', 'Ready', 'orange'],
-      ['Review a change', 'Git diff → coding agent → report', 'Ready', 'blue'],
+      ['Weekday briefing', 'Schedule → calendar → summary', 'Scheduled', 'blue'],
+      ['Research pipeline', 'Topic → sources → saved artifact', 'Ready', 'teal'],
+      ['Review a change', 'Git diff → coding agent → report', 'Ready', 'green'],
     ],
   },
 ];

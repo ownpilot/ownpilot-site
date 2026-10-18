@@ -77,21 +77,25 @@ export default function BrandPage() {
         </div>
       </div>
       <div className="brand-palette">
-        <div style={{ background: '#2585b2' }}>
+        <div>
+          <span className="brand-swatch" style={{ background: 'var(--brand-blue)' }} />
           <strong>Compass blue</strong>
           <code>#2585B2</code>
         </div>
-        <div style={{ background: '#43b27d', color: '#101b15' }}>
+        <div>
+          <span className="brand-swatch" style={{ background: 'var(--brand-green)' }} />
           <strong>Signal green</strong>
           <code>#43B27D</code>
         </div>
-        <div style={{ background: '#ef9365', color: '#251b15' }}>
-          <strong>Human warmth</strong>
-          <code>#EF9365</code>
+        <div>
+          <span className="brand-swatch" style={{ background: 'var(--brand-navy)' }} />
+          <strong>Deep navy</strong>
+          <code>#102F49</code>
         </div>
-        <div style={{ background: '#111415' }}>
-          <strong>Deep focus</strong>
-          <code>#111415</code>
+        <div>
+          <span className="brand-swatch" style={{ background: 'var(--brand-ice)' }} />
+          <strong>Ice blue</strong>
+          <code>#E4F0F5</code>
         </div>
       </div>
       <p className="source-note">

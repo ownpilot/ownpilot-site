@@ -173,7 +173,7 @@ test('reduced motion removes ambient animation without removing content', async 
   await expect(page.locator('.studio-symbol')).toBeAttached();
 });
 for (const theme of ['dark', 'light'])
-  for (const route of ['/', '/integrations/', '/docs/getting-started/'])
+  for (const route of ['/', '/integrations/', '/docs/getting-started/', '/brand/'])
     test(`accessible ${theme} ${route}`, async ({ page }) => {
       await page.addInitScript((t) => localStorage.setItem('ownpilot-theme', t), theme);
       await page.goto(route);

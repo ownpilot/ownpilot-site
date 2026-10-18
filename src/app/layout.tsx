@@ -44,8 +44,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: dark)', color: '#111415' },
-    { media: '(prefers-color-scheme: light)', color: '#faf9f6' },
+    { media: '(prefers-color-scheme: dark)', color: '#081522' },
+    { media: '(prefers-color-scheme: light)', color: '#f6fbfd' },
   ],
 };
 const themeScript = `(function(){var t='dark';try{var s=localStorage.getItem('ownpilot-theme');if(s==='light'||s==='dark'||s==='system')t=s;}catch(e){}document.documentElement.dataset.theme=t;document.documentElement.dataset.color=t==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;})()`;

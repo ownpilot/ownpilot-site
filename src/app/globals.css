@@ -53,32 +53,40 @@
     padding-left: 1.4em;
   }
   ::selection {
-    background: #ef93654a;
+    background: var(--selection);
     color: var(--text);
   }
 }
 @layer base {
   :root {
     color-scheme: dark;
-    --bg: #111415;
-    --bg-subtle: #15191a;
-    --surface: #191d1f;
-    --surface-raised: #202527;
-    --text: #f2f0e9;
-    --muted: #a1a6a6;
-    --subtle: #858d8c;
-    --border: #2c3232;
-    --border-soft: #252b2b;
-    --accent: #ef9365;
-    --accent-hover: #ffac7f;
-    --accent-ink: #201912;
-    --green: #8cbaa2;
-    --blue: #88adca;
-    --violet: #b2a3d2;
-    --code: #111516;
-    --code-text: #d3ded8;
+    --brand-blue: #2585b2;
+    --brand-green: #43b27d;
+    --brand-navy: #102f49;
+    --brand-ice: #e4f0f5;
+    --bg: oklch(0.19118 0.03245 249.65);
+    --bg-subtle: oklch(0.21705 0.03622 249.82);
+    --surface: oklch(0.24558 0.04049 248.5);
+    --surface-raised: oklch(0.28801 0.04554 245.23);
+    --text: oklch(0.96813 0.01251 236.62);
+    --muted: oklch(0.80464 0.03287 236.45);
+    --subtle: oklch(0.73287 0.0387 235.7);
+    --border: oklch(0.37264 0.04403 237.26);
+    --border-soft: oklch(0.31477 0.04354 243.39);
+    --accent: oklch(0.79508 0.0945 229.43);
+    --accent-hover: oklch(0.86813 0.06791 224.03);
+    --accent-ink: oklch(0.24713 0.05001 244.36);
+    --green: oklch(0.79429 0.11495 161.83);
+    --blue: oklch(0.79668 0.09784 232.14);
+    --teal: oklch(0.79811 0.08491 189.88);
+    --code: oklch(0.21097 0.03606 245.49);
+    --code-text: oklch(0.90734 0.03284 174.91);
+    --selection: color-mix(in oklab, var(--blue) 25%, transparent);
+    --accent-glow: color-mix(in oklab, var(--blue) 14%, transparent);
+    --ambient-glow: color-mix(in oklab, var(--blue) 7%, transparent);
+    --signal-glow: color-mix(in oklab, var(--green) 20%, transparent);
     --shadow: 0 25px 80px #0003;
-    --header-bg: #111415ed;
+    --header-bg: #081522ed;
     --oxog-pink: #e05aaa;
     --oxog-purple: #9e74e2;
     --gutter: clamp(22px, 4vw, 72px);
@@ -90,25 +98,25 @@
   }
   :root[data-color='light'] {
     color-scheme: light;
-    --bg: #faf9f6;
-    --bg-subtle: #f1f0eb;
-    --surface: #ffffff;
-    --surface-raised: #eeede7;
-    --text: #202726;
-    --muted: #5b6561;
-    --subtle: #626d66;
-    --border: #d7dbd3;
-    --border-soft: #e3e5dd;
-    --accent: #a94320;
-    --accent-hover: #8e3618;
-    --accent-ink: #fff9f1;
-    --green: #3d7156;
-    --blue: #3b6c8c;
-    --violet: #7c5ca2;
-    --code: #f1f2ec;
-    --code-text: #30473b;
-    --shadow: 0 25px 80px #2735280a;
-    --header-bg: #faf9f6ed;
+    --bg: oklch(0.98489 0.00595 223.45);
+    --bg-subtle: oklch(0.96528 0.01008 228.89);
+    --surface: oklch(1 0 0);
+    --surface-raised: oklch(0.94761 0.01446 224.5);
+    --text: oklch(0.29623 0.05987 246.97);
+    --muted: oklch(0.49487 0.04758 238.16);
+    --subtle: oklch(0.51948 0.04529 237.49);
+    --border: oklch(0.8826 0.02551 229.16);
+    --border-soft: oklch(0.9253 0.01704 225.2);
+    --accent: oklch(0.50994 0.10152 235.89);
+    --accent-hover: oklch(0.44457 0.09128 237.92);
+    --accent-ink: oklch(1 0 0);
+    --green: oklch(0.51106 0.10143 161.87);
+    --blue: oklch(0.5125 0.10528 238.62);
+    --teal: oklch(0.51256 0.08337 187.28);
+    --code: oklch(0.96528 0.01008 228.89);
+    --code-text: oklch(0.38732 0.04687 212.3);
+    --shadow: 0 25px 80px #0c34500a;
+    --header-bg: #f6fbfded;
     --oxog-pink: #c32e8b;
     --oxog-purple: #8250c3;
   }
@@ -234,7 +242,7 @@
   .button-primary:hover {
     color: var(--accent-ink);
     background: var(--accent-hover);
-    box-shadow: 0 4px 20px #ef936518;
+    box-shadow: 0 4px 20px var(--accent-glow);
   }
   .button-secondary {
     border-color: var(--border);
@@ -252,7 +260,7 @@
     flex-shrink: 0;
     border-radius: 50%;
     background: var(--green);
-    box-shadow: 0 0 7px #8cbaa226;
+    box-shadow: 0 0 7px var(--signal-glow);
   }
   .icon-button {
     width: 38px;
@@ -328,7 +336,7 @@
     font-weight: 430;
   }
   .brand-dot {
-    color: var(--accent);
+    color: var(--green);
   }
   .desktop-nav {
     display: flex;
@@ -454,7 +462,7 @@
     position: relative;
     height: 59px;
     border: 1px solid #5b62644d;
-    background: #faf9f5;
+    background: #f6fbfd;
     border-radius: 6px;
     margin-bottom: 7px;
     overflow: hidden;
@@ -465,10 +473,10 @@
     outline-offset: 2px;
   }
   .preview-dark {
-    background: #202526;
+    background: #102233;
   }
   .preview-system {
-    background: linear-gradient(120deg, #faf9f5 50%, #202526 50%);
+    background: linear-gradient(120deg, #f6fbfd 50%, #102233 50%);
   }
   .preview-sidebar {
     position: absolute;
@@ -494,7 +502,7 @@
   }
   .preview-lines i:first-child {
     width: 24px;
-    background: #b5724e;
+    background: var(--brand-blue);
   }
   .preview-lines i:last-child {
     width: 18px;
@@ -503,7 +511,7 @@
     position: absolute;
     left: 4px;
     bottom: 4px;
-    color: #6e7773;
+    color: #7892a5;
   }
   .theme-preview > .theme-check {
     left: auto;
@@ -654,7 +662,7 @@
   .eyebrow-line {
     width: 22px;
     height: 1px;
-    background: var(--accent);
+    background: linear-gradient(90deg, var(--blue), var(--green));
     display: inline-block;
   }
   .hero h1 {
@@ -664,7 +672,7 @@
     letter-spacing: -0.065em;
   }
   .hero h1 > span {
-    color: var(--accent);
+    color: var(--green);
   }
   .hero-description {
     max-width: 430px;
@@ -753,7 +761,7 @@
     justify-content: center;
     background: radial-gradient(circle at 50% 40%, var(--surface-raised), var(--bg));
     box-shadow:
-      0 0 60px #ef936508,
+      0 0 60px var(--ambient-glow),
       0 0 0 10px var(--bg),
       0 0 0 11px var(--border-soft);
   }
@@ -844,11 +852,8 @@
     border-radius: 5px;
     background: var(--surface-raised);
   }
-  .violet {
-    color: var(--violet);
-  }
-  .orange {
-    color: var(--accent);
+  .teal {
+    color: var(--teal);
   }
   .blue {
     color: var(--blue);
@@ -1133,7 +1138,7 @@
     font-size: 19px;
     border: 3px solid var(--bg);
     background: var(--surface-raised);
-    color: var(--violet);
+    color: var(--teal);
     margin-left: -6px;
   }
   .feature-mini-crew > span:first-child {
@@ -1228,7 +1233,7 @@
     color: var(--blue);
   }
   .feature-channels .feature-icon {
-    color: var(--violet);
+    color: var(--teal);
   }
   .feature-security .feature-icon {
     color: var(--green);
@@ -1277,13 +1282,13 @@
     background: var(--border);
   }
   .window-dots i:first-child {
-    background: #ba7667;
+    background: var(--blue);
   }
   .window-dots i:nth-child(2) {
-    background: #c2ab75;
+    background: var(--teal);
   }
   .window-dots i:last-child {
-    background: #7b9b83;
+    background: var(--green);
   }
   .product-shell {
     display: grid;
@@ -1866,7 +1871,7 @@
       0 0 0 21px var(--border-soft),
       0 0 0 40px var(--bg),
       0 0 0 41px var(--border-soft);
-    background: linear-gradient(#ef936512, transparent);
+    background: linear-gradient(var(--signal-glow), transparent);
   }
   .morning-visual > span {
     font-size: 45px;
@@ -2158,7 +2163,7 @@
     letter-spacing: -0.06em;
   }
   .final-cta h2 > span {
-    color: var(--accent);
+    color: var(--green);
   }
   .final-cta p {
     font-size: 14px;
@@ -2883,20 +2888,27 @@
   }
   .brand-palette > div {
     border-radius: 7px;
-    padding: 30px 22px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    color: #fff;
+    background: var(--surface);
+    color: var(--text);
     border: 1px solid var(--border);
+  }
+  .brand-swatch {
+    display: block;
+    height: 100px;
+    border-bottom: 1px solid var(--border);
   }
   .brand-palette strong {
     font-size: 15px;
     font-weight: 500;
+    padding: 22px 22px 0;
   }
   .brand-palette code {
     font: 10px var(--font-mono);
-    margin-top: 12px;
-    opacity: 0.8;
+    padding: 12px 22px 22px;
+    color: var(--muted);
   }
   .not-found {
     padding-block: 110px 140px;
@@ -4927,14 +4939,16 @@
       gap: 10px;
       margin-top: 40px;
     }
-    .brand-palette > div {
-      padding: 22px 17px;
+    .brand-swatch {
+      height: 78px;
     }
     .brand-palette strong {
       font-size: 13px;
+      padding: 18px 17px 0;
     }
     .brand-palette code {
       font-size: 9px;
+      padding: 10px 17px 18px;
     }
     .not-found {
       padding-block: 80px 100px;

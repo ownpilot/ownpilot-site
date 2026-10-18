@@ -16,7 +16,7 @@ for (const [size, name] of [
   [180, 'apple-touch-icon.png'],
 ]) {
   await sharp(logo)
-    .resize(size, size, { fit: 'contain', background: '#111415' })
+    .resize(size, size, { fit: 'contain', background: '#081522' })
     .png()
     .toFile(fileURLToPath(new URL(`../public/${name}`, import.meta.url)));
 }
