@@ -171,6 +171,54 @@ test('reduced motion removes ambient animation without removing content', async 
     await page.locator('.signal-dot').evaluate((el) => getComputedStyle(el).animationName),
   ).toBe('none');
   await expect(page.locator('.studio-symbol')).toBeAttached();
+  await page.locator('.studio-card').scrollIntoViewIfNeeded();
+  await expect(page.locator('.studio-symbol path').first()).toHaveCSS('animation-name', 'none');
+  await expect(page.locator('.studio-symbol path').first()).toHaveCSS('stroke-dashoffset', '0px');
+});
+
+test('studio logo draws once on entry and ecosystem links match the studio reference', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  const card = page.locator('.studio-card');
+  const stroke = page.locator('.studio-symbol path').first();
+  await expect(card).toHaveAttribute('data-motion', 'waiting');
+  await expect(stroke).toHaveCSS('stroke-dashoffset', '400px');
+  await card.scrollIntoViewIfNeeded();
+  await expect(card).toHaveAttribute('data-motion', 'draw');
+  await expect(stroke).toHaveCSS('animation-name', 'studio-draw');
+  await expect(page.locator('.studio-symbol path').last()).toHaveCSS('stroke-dashoffset', '0px');
+  await expect(page.getByText('OwnPilot is built and maintained by')).toBeVisible();
+  const projects = page.getByRole('list', { name: 'More from OXOGNET' }).getByRole('link');
+  await expect(projects).toHaveCount(4);
+  for (const link of await projects.all()) {
+    await expect(link).toHaveAttribute('href', 'https://oxog.net/projects');
+    await expect(link).toHaveAttribute('rel', 'noreferrer');
+  }
+  await page.getByRole('heading', { level: 1 }).scrollIntoViewIfNeeded();
+  await card.scrollIntoViewIfNeeded();
+  await expect(page.locator('.studio-symbol path').last()).toHaveCSS('stroke-dashoffset', '0px');
+});
+
+test('switching to reduced motion reveals the pending studio logo', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/');
+  await expect(page.locator('.studio-card')).toHaveAttribute('data-motion', 'waiting');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect(page.locator('.studio-card')).not.toHaveAttribute('data-motion', 'waiting');
+  await page.locator('.studio-card').scrollIntoViewIfNeeded();
+  await expect(page.locator('.studio-symbol path').first()).toHaveCSS('stroke-dashoffset', '0px');
+});
+
+test('studio identity remains visible without JavaScript', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.locator('.studio-card').scrollIntoViewIfNeeded();
+  await expect(page.getByRole('link', { name: 'Visit OXOGNET' })).toBeVisible();
+  await expect(page.locator('.studio-symbol path').first()).toHaveCSS('stroke-dasharray', 'none');
+  await context.close();
 });
 for (const theme of ['dark', 'light'])
   for (const route of ['/', '/integrations/', '/docs/getting-started/', '/brand/'])

@@ -54,7 +54,7 @@ For an optional `www` subdomain, point its CNAME to `ownpilot.github.io`. Consul
 - Blue/green brand palette with shared OKLCH theme tokens: navy surfaces in dark mode, ice-blue surfaces and navy text in light mode, accessible blue/green/teal accents, and coordinated focus rings, diagrams, code panels and app icons.
 - Dark, light and system themes; a pre-paint script prevents theme flash, localStorage persists the selection, native radios support keyboard selection, OS changes update system mode.
 - Original vector-based flow diagrams; the compass SVG follows the product's existing raster identity. The original raster is also preserved for download.
-- The OXOGNET mark retains the exact geometry, proportions and staggered stroke-draw timing observed on CobaltDB. Reduced-motion mode displays it fully drawn.
+- The OXOGNET mark retains the exact geometry, proportions and staggered stroke-draw timing observed on NineDeploy. The studio card follows NineDeploy with its ecosystem links and viewport-triggered animation. Reduced-motion mode and pages without JavaScript display it fully drawn.
 - Product UI and workflows are **illustrations with sample data**, not screenshots of live agent activity. The source repository's available screenshots document troubleshooting and were not suitable for product marketing.
 - No fake benchmarks, testimonials, customer counts, analytics or paid-service promises.
 
