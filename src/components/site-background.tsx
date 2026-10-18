@@ -19,7 +19,7 @@ export function SiteBackground() {
   const [reduced, setReduced] = useState(false);
   const [ready, setReady] = useState(false);
   const [controlHost, setControlHost] = useState<HTMLElement | null>(null);
-  const label = enabled ? 'Fare efektlerini kapat' : 'Fare efektlerini aç';
+  const label = enabled ? 'Disable mouse effects' : 'Enable mouse effects';
 
   useEffect(() => {
     const media = matchMedia('(prefers-reduced-motion: reduce)');

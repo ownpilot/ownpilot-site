@@ -56,7 +56,7 @@ test('turning mouse effects off removes input listeners while ambient motion con
     await expect
       .poll(() => page.locator('.field-pulse[data-active=true]').count())
       .toBeGreaterThan(0);
-    await page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true }).click();
+    await page.getByRole('button', { name: 'Disable mouse effects', exact: true }).click();
     await expect(field).toHaveAttribute('data-state', 'ambient');
     expect(await page.locator('.field-node').count()).toBeGreaterThan(0);
     await expect(
@@ -75,11 +75,11 @@ test('turning mouse effects off removes input listeners while ambient motion con
     await page.mouse.click(18, 210);
     await page.clock.runFor(120);
     await expect(page.locator('.field-pulse[data-active=true]')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Fare efektlerini aç', exact: true }).click();
+    await page.getByRole('button', { name: 'Enable mouse effects', exact: true }).click();
     await expect(field).toHaveAttribute('data-state', 'running');
     expect((await resources()).listeners).toBe(running.listeners);
   }
-  await page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true }).click();
+  await page.getByRole('button', { name: 'Disable mouse effects', exact: true }).click();
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await expect(page.getByRole('img', { name: /Turn a topic/ })).toBeVisible();
   await expect(field).toHaveAttribute('data-state', 'ambient');
@@ -98,17 +98,17 @@ test('the mouse control is adjacent to themes, keyboard operable, touch sized an
   page,
 }) => {
   await page.goto('/');
-  const on = page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true });
-  const off = page.getByRole('button', { name: 'Fare efektlerini aç', exact: true });
+  const on = page.getByRole('button', { name: 'Disable mouse effects', exact: true });
+  const off = page.getByRole('button', { name: 'Enable mouse effects', exact: true });
   await expect(on).toHaveAttribute('aria-pressed', 'true');
-  await expect(on).toHaveAttribute('title', 'Fare efektlerini kapat');
+  await expect(on).toHaveAttribute('title', 'Disable mouse effects');
   expect(await page.locator('.theme-picker').evaluate((el) => el.nextElementSibling?.id)).toBe(
     'background-motion-slot',
   );
   await on.focus();
   await on.press('Space');
   await expect(off).toHaveAttribute('aria-pressed', 'false');
-  await expect(off).toHaveAttribute('title', 'Fare efektlerini aç');
+  await expect(off).toHaveAttribute('title', 'Enable mouse effects');
   expect(await page.evaluate((key) => localStorage.getItem(key), key)).toBe('off');
   await page.reload();
   await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'ambient');
@@ -144,9 +144,9 @@ test('storage failures leave the control usable and preserve the device default'
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'reduced');
-  await page.getByRole('button', { name: 'Fare efektlerini aç', exact: true }).click();
+  await page.getByRole('button', { name: 'Enable mouse effects', exact: true }).click();
   await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'running');
-  await page.getByRole('button', { name: 'Fare efektlerini kapat', exact: true }).click();
+  await page.getByRole('button', { name: 'Disable mouse effects', exact: true }).click();
   await expect(page.locator('.site-field')).toHaveAttribute('data-state', 'reduced');
   expect(errors).toEqual([]);
 });
