@@ -19,9 +19,16 @@ export function SiteBackground() {
   useEffect(() => {
     if (!surface.current) return;
     scene.current = createSiteScene(surface.current, setReduced);
-    setControlHost(document.getElementById('background-motion-slot'));
+    const bindControl = () => {
+      const slot = document.getElementById('background-motion-slot');
+      if (slot?.dataset.ready === 'true') setControlHost(slot);
+    };
+    // Wait for the navigation boundary to hydrate before adding portal children.
+    window.addEventListener('ownpilot:motion-control-ready', bindControl);
+    bindControl();
     setReady(true);
     return () => {
+      window.removeEventListener('ownpilot:motion-control-ready', bindControl);
       scene.current?.destroy();
       scene.current = null;
     };

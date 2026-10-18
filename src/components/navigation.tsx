@@ -143,6 +143,16 @@ export function ThemePicker() {
 }
 
 export function Navigation() {
+  useEffect(() => {
+    const slot = document.getElementById('background-motion-slot');
+    if (slot) {
+      slot.dataset.ready = 'true';
+      window.dispatchEvent(new Event('ownpilot:motion-control-ready'));
+    }
+    return () => {
+      if (slot) delete slot.dataset.ready;
+    };
+  }, []);
   const [mobile, setMobile] = useState(false);
   const [query, setQuery] = useState('');
   const dialog = useRef<HTMLDialogElement>(null);
