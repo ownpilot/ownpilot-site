@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { ArrowUpRight, Heart } from 'lucide-react';
-import { Github } from './github-icon';
+import { ArrowUpRight } from 'lucide-react';
 import { Brand } from './brand';
 import { OxogStudio } from './oxog-studio';
-import { REPO, SITE_REPO, VERSION } from '@/lib/site';
+import { REPO, VERSION } from '@/lib/site';
 export function Footer() {
   const links = {
     Explore: [
@@ -60,13 +59,10 @@ export function Footer() {
         </div>
         <OxogStudio />
         <div className="footer-bottom">
-          <span>© 2026 OwnPilot contributors</span>
-          <span className="footer-made">
-            <Heart size={12} /> Built for the freedom to build.
-          </span>
-          <a href={SITE_REPO} target="_blank" rel="noreferrer">
-            <Github size={13} />
-            Website source
+          <span>© 2026 OwnPilot contributors.</span>
+          <span>MIT · Made to be yours.</span>
+          <a href={`${REPO}/releases/tag/v${VERSION}`}>
+            v{VERSION}
             <ArrowUpRight size={11} />
           </a>
         </div>
