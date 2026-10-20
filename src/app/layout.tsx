@@ -1,6 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import '@fontsource-variable/inter';
-import '@fontsource-variable/jetbrains-mono';
 import './globals.css';
 import { Navigation } from '@/components/navigation';
 import { Footer } from '@/components/footer';
@@ -44,6 +42,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#081522' },
     { media: '(prefers-color-scheme: light)', color: '#f6fbfd' },
@@ -54,6 +53,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark" data-color="dark" suppressHydrationWarning>
       <head>
+        <link
+          rel="preload"
+          href="/fonts/oxog/space-grotesk-latin-wght-normal.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body>

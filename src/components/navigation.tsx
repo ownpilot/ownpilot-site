@@ -159,6 +159,14 @@ export function Navigation() {
   const input = useRef<HTMLInputElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   const path = usePathname();
+  useEffect(() => {
+    const compact = matchMedia('(max-width: 850px)');
+    const sync = () => {
+      if (!compact.matches) setMobile(false);
+    };
+    compact.addEventListener('change', sync);
+    return () => compact.removeEventListener('change', sync);
+  }, []);
   function openSearch() {
     setMobile(false);
     dialog.current?.showModal();

@@ -38,8 +38,25 @@ http
       if (s.isDirectory()) file = path.join(file, 'index.html');
       await stat(file);
     } catch {
-      file = path.join(root, '404.html');
-      res.statusCode = 404;
+      // Next's Windows export nests route-data segments that clients request with dots.
+      const name = path.basename(file);
+      const segments =
+        name.startsWith('__next.') && name.endsWith('.txt') ? name.slice(7, -4).split('.') : [];
+      let matched = false;
+      if (segments.length > 1 && segments.every((segment) => /^[\w$-]+$/.test(segment))) {
+        const nested =
+          path.join(path.dirname(file), `__next.${segments[0]}`, ...segments.slice(1)) + '.txt';
+        try {
+          matched = (await stat(nested)).isFile();
+          if (matched) file = nested;
+        } catch {
+          // Unknown routes still receive a real 404 response.
+        }
+      }
+      if (!matched) {
+        file = path.join(root, '404.html');
+        res.statusCode = 404;
+      }
     }
     res.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream');
     createReadStream(file)

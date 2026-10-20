@@ -28,7 +28,7 @@ npm run preview
 
 `next build` produces `out/`, including directory-based routes, `CNAME`, `.nojekyll`, the sitemap, robots file and local assets. `check:export` checks every generated HTML file and its internal link/asset references. The preview server serves directory indexes and a real 404 response; it does not fall back to a single-page app.
 
-Playwright covers all 17 content routes in both themes at 375, 768, 1024, 1440, 1920, 2560 and 3840px; theme persistence and system changes; blocked-storage fallback; mobile navigation; documentation search and empty results; direct navigation/refresh; workflow examples; keyboard tab controls; command clipboard feedback; integration filters and empty state; reduced motion; WCAG A/AA checks; and Pages endpoints. `SITE_TEST_URL` can target a deployed site instead of starting the local preview server. No product setup, API credentials or live provider execution is included in these website tests.
+Playwright covers all 17 content routes in both themes at 320, 375, 390, 768, 1024, 1280, 1440, 1920, 2560 and 3840px; theme persistence and system changes; blocked-storage fallback; mobile navigation; documentation search and empty results; direct navigation/refresh; workflow examples; keyboard tab controls; command clipboard feedback; integration filters and empty state; reduced motion; WCAG 2.2 A/AA checks on every content route and open controls; and Pages endpoints. Additional checks cover breakpoint boundaries, short landscape viewports, scrollbar reflow, font subsets and clipboard failure feedback. `SITE_TEST_URL` can target a deployed site instead of starting the local preview server. No product setup, API credentials or live provider execution is included in these website tests.
 
 ## Publish
 
@@ -51,11 +51,12 @@ For an optional `www` subdomain, point its CNAME to `ownpilot.github.io`. Consul
 
 - App Router server-rendered static pages, small client components for navigation, themes, search, filters, code copy and illustrative walkthroughs.
 - Central layout tokens in `src/app/globals.css`; 1728px maximum content width, fluid gutters, readable article measure, explicit tablet/mobile layouts.
+- Space Grotesk is the default interface and reading font. JetBrains Mono covers code, terminals and technical labels, including nested code elements. Local Latin/Latin Extended subsets cover English and Turkish; the main font is preloaded. Quicksand is reserved as a token and is not downloaded without an actual use. The exact OXOG reference retains its own licensed fonts.
 - Blue/green brand palette with shared OKLCH theme tokens: navy surfaces in dark mode, ice-blue surfaces and navy text in light mode, accessible blue/green/teal accents, and coordinated focus rings, diagrams, code panels and app icons.
-- One continuous, viewport-sized SVG compass field across every route and section. Local pointer reactions, capped click/tap waves, scroll parallax and pooled SVG objects run outside React. `src/lib/ambient-field.ts` centralizes counts, radii and lifetimes; brand theme tokens color the scene. Content shields keep text and cards clear. Hidden/offscreen scenes, reduced motion and the pause control stop the frame loop. No rendering dependency or Canvas is used.
+- One continuous, viewport-sized SVG compass field across every route and section. Local pointer reactions, capped click/tap waves, scroll parallax and pooled SVG objects run outside React. `src/lib/ambient-field.ts` centralizes counts, radii and lifetimes; brand theme tokens color the scene. Hidden/offscreen scenes and reduced motion suspend unnecessary movement. The mouse control stops pointer effects while calm ambient motion continues. No rendering dependency or Canvas is used.
 - Dark, light and system themes; a pre-paint script prevents theme flash, localStorage persists the selection, native radios support keyboard selection, OS changes update system mode.
 - Original vector-based flow diagrams; the compass SVG follows the product's existing raster identity. The original raster is also preserved for download.
-- The OXOGNET mark retains the exact geometry, proportions and staggered stroke-draw timing observed on NineDeploy. The studio card follows NineDeploy with its ecosystem links and viewport-triggered animation. Reduced-motion mode and pages without JavaScript display it fully drawn.
+- The OXOG studio area follows the requested Mammoth Engine reference: one full-width link, the original SVG geometry, licensed typefaces, reference copy and a staggered six-second drawing loop. It stops offscreen and with reduced motion; pages without JavaScript display it fully drawn.
 - Product UI and workflows are **illustrations with sample data**, not screenshots of live agent activity. The source repository's available screenshots document troubleshooting and were not suitable for product marketing.
 - No fake benchmarks, testimonials, customer counts, analytics or paid-service promises.
 
@@ -67,7 +68,7 @@ The canonical social sharing asset is `public/og.png` (1200×630). Its full-reso
 
 ## Versions verified on 2026-10-18
 
-Node.js 26.12.0; npm 12.2.0; Next.js 16.4.2; React 19.3.1; TypeScript 7.0.2; lucide-react 1.59.0; Fontsource Inter and JetBrains Mono 5.3.0; Sharp 0.35.5; Playwright 1.64.1; axe-core Playwright 4.14.0; Prettier 3.9.10. Dependency versions are exact, with `package-lock.json`. Product version: v0.8.3, distinct from the website stack.
+Node.js 26.12.0; npm 12.2.0; Next.js 16.4.2; React 19.3.1; TypeScript 7.0.2; lucide-react 1.59.0; Fontsource JetBrains Mono 5.3.0; Sharp 0.35.5; Playwright 1.64.1; axe-core Playwright 4.14.0; Prettier 3.9.10. Space Grotesk and the reference studio fonts are self-hosted with their OFL licenses. Dependency versions are exact, with `package-lock.json`. Product version: v0.8.3, distinct from the website stack.
 
 ## License
 

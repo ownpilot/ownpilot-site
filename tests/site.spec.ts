@@ -22,7 +22,7 @@ const routes = [
   '/brand/',
   ...docSlugs.map((s) => `/docs/${s}/`),
 ];
-for (const width of [375, 768, 1024, 1440, 1920, 2560, 3840])
+for (const width of [320, 375, 390, 768, 1024, 1280, 1440, 1920, 2560, 3840])
   for (const theme of ['dark', 'light']) {
     test(`${width}px ${theme}: every route renders without overflow or missing assets`, async ({
       page,
@@ -238,12 +238,12 @@ test('studio identity remains visible without JavaScript', async ({ browser, bas
   await context.close();
 });
 for (const theme of ['dark', 'light'])
-  for (const route of ['/', '/integrations/', '/docs/getting-started/', '/brand/'])
+  for (const route of routes)
     test(`accessible ${theme} ${route}`, async ({ page }) => {
       await page.addInitScript((t) => localStorage.setItem('ownpilot-theme', t), theme);
       await page.goto(route);
       const result = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
         .analyze();
       expect(result.violations).toEqual([]);
     });

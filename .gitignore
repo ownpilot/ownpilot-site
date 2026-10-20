@@ -3,6 +3,7 @@ node_modules/
 out/
 test-results/
 playwright-report/
+.temp_files/
 *.tsbuildinfo
 .env*
 !.env.example
